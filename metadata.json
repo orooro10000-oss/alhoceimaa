@@ -1,0 +1,5 @@
+{
+  "name": "AirHome - Vacation Rentals & AI Hosting",
+  "description": "A full-featured vacation rental clone with guest search, category filtering, and a robust host dashboard. Features AI-powered listing generation and local persistence for full CRUD capabilities.",
+  "requestFramePermissions": []
+}
