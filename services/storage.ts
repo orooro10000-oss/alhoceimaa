@@ -1,8 +1,8 @@
 import { Property, Booking } from '../types';
 
-// تحديث المفتاح لضمان حذف الإعلانات القديمة وبقاء إعلان ميرادور فقط
-const STORAGE_KEY = 'airhome_properties_v7_mirador_only'; 
-const BOOKING_KEY = 'airhome_bookings_v7_mirador_only';
+// تحديث المفتاح لضمان ظهور غلاف الإعلان الجديد للجميع
+const STORAGE_KEY = 'airhome_properties_v9_cover_final'; 
+const BOOKING_KEY = 'airhome_bookings_v9_mirador_final';
 
 // بيانات العقارات (تم إبقاء العقار الحقيقي فقط)
 const SEED_DATA: Property[] = [
@@ -11,14 +11,14 @@ const SEED_DATA: Property[] = [
     title: 'شقة فاخرة مطلة على البحر - ميرادور',
     description: 'استمتع بإقامة هادئة في هذه الشقة المميزة بحي ميرادور الراقي. تتميز بإطلالة بانورامية رائعة على البحر الأبيض المتوسط، وتصميم مريح يجمع بين الأصالة والحداثة. قريبة جداً من الكورنيش والمقاهي والشاطئ.',
     location: 'ميرادور (Mirador)',
-    price: 400,
+    // price: 400, // السعر مخفي (تواصل للسعر)
     images: [
-      'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg', // صالون رئيسي (غلاف)
+      'https://i.ibb.co/Y40VhPnF/IMG-20251031-WA0060.jpg', // الصورة المطلوبة كغلاف رئيسي
+      'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg', // الصالون
       'https://i.ibb.co/7Jy1mJXs/IMG-20251031-WA0059.jpg', // الإطلالة
       'https://i.ibb.co/pTc99Wh/IMG-20251031-WA0065.jpg', // غرفة النوم 1
       'https://i.ibb.co/7tjZr6bT/IMG-20251031-WA0064.jpg', // غرفة النوم 2
       'https://i.ibb.co/JjWyvmnR/IMG-20251031-WA0067.jpg', // صالون زاوية 2
-      'https://i.ibb.co/LDDKjXQr/IMG-20251031-WA0060.jpg', // الحمام
       'https://i.ibb.co/Z6gbmM9Y/IMG-20251031-WA0054.jpg'  // العمارة من الخارج
     ],
     category: 'شاطئية',
@@ -35,12 +35,12 @@ const SEED_DATA: Property[] = [
     latitude: 35.2365, 
     longitude: -3.9345,
     imageCategories: {
-        'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg': 'cover',
+        'https://i.ibb.co/Y40VhPnF/IMG-20251031-WA0060.jpg': 'cover', // تصنيف الصورة كغلاف
+        'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg': 'living',
         'https://i.ibb.co/7Jy1mJXs/IMG-20251031-WA0059.jpg': 'living',
         'https://i.ibb.co/pTc99Wh/IMG-20251031-WA0065.jpg': 'bedroom_1',
         'https://i.ibb.co/7tjZr6bT/IMG-20251031-WA0064.jpg': 'bedroom_2',
         'https://i.ibb.co/JjWyvmnR/IMG-20251031-WA0067.jpg': 'living',
-        'https://i.ibb.co/LDDKjXQr/IMG-20251031-WA0060.jpg': 'bathroom_1',
         'https://i.ibb.co/Z6gbmM9Y/IMG-20251031-WA0054.jpg': 'exterior'
     }
   }

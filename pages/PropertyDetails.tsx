@@ -216,7 +216,7 @@ const PropertyDetails: React.FC = () => {
   };
 
   const nights = calculateNights();
-  const totalPrice = property ? property.price * nights : 0;
+  const totalPrice = (property && property.price) ? property.price * nights : 0;
 
   const handleDateChange = (start: string, end: string) => {
     setStartDate(start);
@@ -289,7 +289,7 @@ const PropertyDetails: React.FC = () => {
         setExistingBookings(BookingService.getByProperty(property.id));
         
         // Prepare WhatsApp Message - Professional & Pure Arabic
-        const message = `
+        let message = `
 ✨ *طلب حجز جديد* ✨
 
 السلام عليكم، أرغب بحجز عقاركم المميز:
@@ -302,11 +302,13 @@ const PropertyDetails: React.FC = () => {
 📅 المغادرة: ${endDate}
 🌙 المدة: ${nights} ليالٍ
 👥 العدد: ${guests} ضيوف
+`.trim();
 
-💰 *الإجمالي:* ${totalPrice} درهم
+        if (totalPrice > 0) {
+            message += `\n💰 *الإجمالي:* ${totalPrice} درهم`;
+        }
 
-بانتظار تأكيدكم، شكراً جزيلاً.
-        `.trim();
+        message += `\n\nبانتظار تأكيدكم، شكراً جزيلاً.`;
 
         const cleanPhone = HOST_PHONE_NUMBER.replace(/^00/, '').replace(/^\+/, '');
         const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -668,11 +670,17 @@ const PropertyDetails: React.FC = () => {
            <div className="sticky top-28 bg-white border border-gray-200 shadow-[0_6px_16px_rgba(0,0,0,0.12)] rounded-2xl p-6 booking-calendar-wrapper">
               <div className="flex justify-between items-end mb-6">
                  <div className="flex flex-col">
-                    <span className="text-gray-500 line-through text-sm font-medium">MAD {Math.round(property.price * 1.2)}</span>
-                    <div>
-                        <span className="text-2xl font-bold text-gray-900">MAD {property.price}</span>
-                        <span className="text-gray-500 font-medium"> / ليلة</span>
-                    </div>
+                    {property.price ? (
+                        <>
+                            <span className="text-gray-500 line-through text-sm font-medium">MAD {Math.round(property.price * 1.2)}</span>
+                            <div>
+                                <span className="text-2xl font-bold text-gray-900">MAD {property.price}</span>
+                                <span className="text-gray-500 font-medium"> / ليلة</span>
+                            </div>
+                        </>
+                    ) : (
+                        <span className="text-xl font-bold text-gray-900">تواصل للسعر</span>
+                    )}
                  </div>
                  <div className="flex items-center gap-1 text-sm font-bold text-gray-800">
                     <Star size={14} className="fill-black" /> {property.rating}
@@ -736,7 +744,7 @@ const PropertyDetails: React.FC = () => {
                         <span>لن يتم خصم أي مبلغ الآن</span>
                     </div>
 
-                    {nights > 0 && (
+                    {nights > 0 && property.price && (
                         <div className="space-y-3 text-gray-600 animate-in fade-in slide-in-from-top-2 pt-2">
                             <div className="flex justify-between text-sm">
                                 <span className="underline decoration-gray-300">MAD {property.price} × {nights} ليال</span>
@@ -759,8 +767,14 @@ const PropertyDetails: React.FC = () => {
           <div className="p-4 flex items-center justify-between">
             <div className="flex flex-col">
                 <div className="flex items-baseline gap-1">
-                    <span className="font-bold text-xl text-gray-900">{property.price} د.م</span>
-                    <span className="text-sm text-gray-500">/ ليلة</span>
+                    {property.price ? (
+                         <>
+                             <span className="font-bold text-xl text-gray-900">{property.price} د.م</span>
+                             <span className="text-sm text-gray-500">/ ليلة</span>
+                         </>
+                    ) : (
+                         <span className="font-bold text-lg text-gray-900">تواصل للسعر</span>
+                    )}
                 </div>
                 <button 
                    onClick={() => setIsMobileBookingOpen(true)}
@@ -823,10 +837,12 @@ const PropertyDetails: React.FC = () => {
                             </div>
                         )}
                         
-                        <div className="border-t border-dashed border-gray-200 pt-4 mb-6 flex justify-between items-center">
-                            <span className="font-bold text-gray-500">الإجمالي (شامل الرسوم)</span>
-                            <span className="font-bold text-2xl text-gray-900">{totalPrice} د.م</span>
-                        </div>
+                        {totalPrice > 0 && (
+                            <div className="border-t border-dashed border-gray-200 pt-4 mb-6 flex justify-between items-center">
+                                <span className="font-bold text-gray-500">الإجمالي (شامل الرسوم)</span>
+                                <span className="font-bold text-2xl text-gray-900">{totalPrice} د.م</span>
+                            </div>
+                        )}
 
                         <button 
                             onClick={handleBookNow}

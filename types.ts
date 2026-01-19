@@ -4,7 +4,7 @@ export interface Property {
   title: string;
   description: string;
   location: string;
-  price: number;
+  price?: number; // Made optional
   images: string[]; 
   imageCategories?: Record<string, string>; // Map Image URL/Base64 -> Category Name (e.g. "Bedroom 1")
   category: string;
