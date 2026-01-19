@@ -1,38 +1,47 @@
 import { Property, Booking } from '../types';
 
-// قمنا بتحديث مفتاح التخزين لضمان ظهور البيانات الجديدة التجريبية
-// عند رفع الموقع، سيقوم هذا المفتاح الجديد بتحميل الإعلانات الافتراضية
-const STORAGE_KEY = 'airhome_properties_demo_v2'; 
-const BOOKING_KEY = 'airhome_bookings_demo_v2';
+// تحديث المفتاح لضمان ظهور العقار الجديد (شقة مطلة على البحر) للجميع فوراً
+const STORAGE_KEY = 'airhome_properties_v6_mirador_update'; 
+const BOOKING_KEY = 'airhome_bookings_v6_mirador_update';
 
-// بيانات تجريبية (إعلانات وهمية) لتظهر مباشرة عند فتح التطبيق
+// بيانات العقارات (تم إضافة العقار الحقيقي في المقدمة)
 const SEED_DATA: Property[] = [
   {
-    id: 'prop_1',
-    title: 'شقة فاخرة بإطلالة على البحر في ميرادور',
-    description: 'استمتع بإقامة لا تُنسى في هذه الشقة الفاخرة التي تطل مباشرة على البحر الأبيض المتوسط. تتميز بتصميم عصري وأثاث مريح، مع شرفة واسعة مثالية لتناول الإفطار أمام الأمواج.',
+    id: 'prop_real_mirador_sea_view',
+    title: 'شقة فاخرة مطلة على البحر - ميرادور',
+    description: 'استمتع بإقامة هادئة في هذه الشقة المميزة بحي ميرادور الراقي. تتميز بإطلالة بانورامية رائعة على البحر الأبيض المتوسط، وتصميم مريح يجمع بين الأصالة والحداثة. قريبة جداً من الكورنيش والمقاهي والشاطئ.',
     location: 'ميرادور (Mirador)',
-    price: 800,
+    price: 400,
     images: [
-      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&w=800&q=80'
+      'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg', // صالون رئيسي (غلاف)
+      'https://i.ibb.co/7Jy1mJXs/IMG-20251031-WA0059.jpg', // الإطلالة
+      'https://i.ibb.co/pTc99Wh/IMG-20251031-WA0065.jpg', // غرفة النوم 1
+      'https://i.ibb.co/7tjZr6bT/IMG-20251031-WA0064.jpg', // غرفة النوم 2
+      'https://i.ibb.co/JjWyvmnR/IMG-20251031-WA0067.jpg', // صالون زاوية 2
+      'https://i.ibb.co/LDDKjXQr/IMG-20251031-WA0060.jpg', // الحمام
+      'https://i.ibb.co/Z6gbmM9Y/IMG-20251031-WA0054.jpg'  // العمارة من الخارج
     ],
     category: 'شاطئية',
     status: 'published',
-    rating: 4.9,
+    rating: 5.0,
     ownerId: 'host_123',
-    amenities: ['واي فاي', 'مطبخ مجهز', 'تكييف', 'إطلالة', 'تلفاز'],
-    maxGuests: 4,
+    amenities: ['إطلالة على البحر', 'واي فاي', 'تلفاز', 'مطبخ مجهز', 'قريب من الشاطئ', 'عائلية'],
+    maxGuests: 5,
     bedrooms: 2,
     bathrooms: 1,
     livingRooms: 1,
     kitchens: 1,
-    badge: 'crown',
+    badge: 'verified', // علامة موثوق لزيادة الثقة
+    latitude: 35.2365, 
+    longitude: -3.9345,
     imageCategories: {
-        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80': 'cover',
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80': 'living',
-        'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&w=800&q=80': 'kitchen_1'
+        'https://i.ibb.co/nsvn24xj/IMG-20251031-WA0069.jpg': 'cover',
+        'https://i.ibb.co/7Jy1mJXs/IMG-20251031-WA0059.jpg': 'living',
+        'https://i.ibb.co/pTc99Wh/IMG-20251031-WA0065.jpg': 'bedroom_1',
+        'https://i.ibb.co/7tjZr6bT/IMG-20251031-WA0064.jpg': 'bedroom_2',
+        'https://i.ibb.co/JjWyvmnR/IMG-20251031-WA0067.jpg': 'living',
+        'https://i.ibb.co/LDDKjXQr/IMG-20251031-WA0060.jpg': 'bathroom_1',
+        'https://i.ibb.co/Z6gbmM9Y/IMG-20251031-WA0054.jpg': 'exterior'
     }
   },
   {
@@ -57,6 +66,8 @@ const SEED_DATA: Property[] = [
     livingRooms: 2,
     kitchens: 1,
     badge: 'diamond',
+    latitude: 35.2205,
+    longitude: -3.9802,
     imageCategories: {
         'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80': 'cover',
         'https://images.unsplash.com/photo-1584622050111-993a426fbf0a?auto=format&fit=crop&w=800&q=80': 'bathroom_1',
@@ -84,6 +95,8 @@ const SEED_DATA: Property[] = [
     livingRooms: 0,
     kitchens: 1,
     badge: 'verified',
+    latitude: 35.2446,
+    longitude: -3.9321,
     imageCategories: {
          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80': 'cover',
          'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=800&q=80': 'bedroom_1'
@@ -110,6 +123,8 @@ const SEED_DATA: Property[] = [
     livingRooms: 1,
     kitchens: 1,
     badge: 'trophy',
+    latitude: 35.2472,
+    longitude: -3.9365,
     imageCategories: {
         'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80': 'cover',
         'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80': 'exterior'
@@ -136,6 +151,8 @@ const SEED_DATA: Property[] = [
     livingRooms: 1,
     kitchens: 1,
     badge: 'none',
+    latitude: 35.2400,
+    longitude: -3.9300,
     imageCategories: {
         'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=800&q=80': 'cover',
         'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&w=800&q=80': 'kitchen_1'

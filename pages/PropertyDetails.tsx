@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { PropertyService, BookingService } from '../services/storage';
 import { Property, Booking } from '../types';
 import { Calendar } from '../components/Calendar';
+import MapComponent from '../components/Map';
 import { Star, MapPin, Share, Heart, ChevronLeft, ChevronRight, ArrowRight, X, BedDouble, Bath, Armchair, Utensils, AlertCircle, CheckCircle2, Phone, MessageCircle, ArrowDown, Wifi, Tv, Car, Wind, Waves, Coffee, Mountain, CalendarDays, Users } from 'lucide-react';
 import { HOST_PHONE_NUMBER } from '../constants';
 
@@ -648,6 +649,18 @@ const PropertyDetails: React.FC = () => {
                 {property.description}
              </p>
            </div>
+           
+           {/* MAP SECTION - NEWLY INTEGRATED */}
+           <div className="pb-8 border-b border-gray-100">
+             <h2 className="text-xl font-bold mb-4">الموقع</h2>
+             <MapComponent 
+                lat={property.latitude} 
+                lng={property.longitude} 
+                zoom={14} 
+             />
+             <p className="text-sm text-gray-500 mt-2">الموقع تقريبي للحفاظ على الخصوصية.</p>
+           </div>
+
         </div>
 
         {/* Desktop Sidebar Booking Card */}
