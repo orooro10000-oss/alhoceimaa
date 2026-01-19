@@ -16,24 +16,14 @@ const Navbar: React.FC = () => {
   // State for "Owner Mode" visibility
   const [showProfile, setShowProfile] = useState(false);
   
-  // Security: Only authorized devices can use the long-press feature
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [secretTapCount, setSecretTapCount] = useState(0);
-
   // Long press logic variables
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isPressing, setIsPressing] = useState(false); // For visual feedback
 
   useEffect(() => {
-    // 1. Check if device is already authorized
-    const authorized = localStorage.getItem('airhome_device_authorized') === 'true';
-    setIsAuthorized(authorized);
-
-    // 2. If authorized, check if owner mode was left active
-    if (authorized) {
-        const ownerModeActive = localStorage.getItem('airhome_owner_mode') === 'true';
-        setShowProfile(ownerModeActive);
-    }
+    // Check if owner mode was left active from previous session
+    const ownerModeActive = localStorage.getItem('airhome_owner_mode') === 'true';
+    setShowProfile(ownerModeActive);
   }, []);
 
   // Close search when clicking outside
@@ -65,38 +55,8 @@ const Navbar: React.FC = () => {
     }
   };
 
-  // --- 1. Secret Handshake: Tap "Search" text 5 times to authorize device ---
-  const handleSecretTap = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      
-      // If already authorized, no need to count
-      if (isAuthorized) return;
-
-      setSecretTapCount(prev => {
-          const newCount = prev + 1;
-          if (newCount >= 5) {
-              // Authorize this device permanently
-              localStorage.setItem('airhome_device_authorized', 'true');
-              setIsAuthorized(true);
-              
-              // Enable owner mode immediately
-              setShowProfile(true);
-              localStorage.setItem('airhome_owner_mode', 'true');
-              
-              alert("✅ تم تعريف هذا الجهاز كجهاز المالك!\nيمكنك الآن استخدام الضغط المطول على أيقونة المنزل.");
-              return 0;
-          }
-          return newCount;
-      });
-      // Reset counter if user stops tapping for 1 second
-      setTimeout(() => setSecretTapCount(0), 1000);
-  };
-
-  // --- 2. Long Press Handler (Works ONLY if authorized) ---
+  // --- Long Press Handler (Simplified) ---
   const handlePressStart = (e: React.TouchEvent | React.MouseEvent) => {
-      // Security Check: If not authorized, do nothing (act like normal user)
-      if (!isAuthorized) return;
-
       setIsPressing(true); // Visual feedback
 
       pressTimer.current = setTimeout(() => {
@@ -112,12 +72,14 @@ const Navbar: React.FC = () => {
           const msg = newState ? "👁️ وضع المالك: مفعل" : "🙈 وضع المالك: مخفي";
           const toast = document.createElement('div');
           toast.textContent = msg;
-          toast.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:15px 25px;border-radius:25px;z-index:9999;font-weight:bold;pointer-events:none;";
+          toast.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:15px 25px;border-radius:25px;z-index:9999;font-weight:bold;pointer-events:none;backdrop-filter:blur(5px);box-shadow:0 10px 25px rgba(0,0,0,0.2);";
           document.body.appendChild(toast);
-          setTimeout(() => document.body.removeChild(toast), 2000);
+          setTimeout(() => {
+              if (document.body.contains(toast)) document.body.removeChild(toast);
+          }, 2000);
           
           setIsPressing(false);
-      }, 2000); // 2 Seconds
+      }, 1000); // 1 Second Long Press
   };
 
   const handlePressEnd = () => {
@@ -224,16 +186,9 @@ const Navbar: React.FC = () => {
          >
              <div className="flex items-center gap-3 flex-1 h-full justify-center cursor-pointer select-none">
                  <Search size={18} className="text-black" strokeWidth={2.5} onClick={handleSearchClick} />
-                 {/* 
-                    SECRET TRIGGER: 
-                    Tap "البحث عن بيوت" 5 times to authorize this device as Owner Device.
-                 */}
                  <span 
                     className="font-semibold text-gray-900 text-sm"
-                    onClick={(e) => {
-                        handleSearchClick(); // Also open search
-                        handleSecretTap(e);  // Count taps
-                    }}
+                    onClick={handleSearchClick}
                  >
                      البحث عن بيوت
                  </span>
@@ -278,7 +233,7 @@ const Navbar: React.FC = () => {
                 {/* 
                     Home Icon:
                     - Normal Click: Go to Home
-                    - Long Press (2s): Toggle Owner Mode (ONLY if authorized)
+                    - Long Press (1s): Toggle Owner Mode
                 */}
                 <div
                     className="relative"

@@ -1,10 +1,10 @@
 import { Property, Booking } from '../types';
 
-// تحديث المفتاح لضمان ظهور العقار الجديد (شقة مطلة على البحر) للجميع فوراً
-const STORAGE_KEY = 'airhome_properties_v6_mirador_update'; 
-const BOOKING_KEY = 'airhome_bookings_v6_mirador_update';
+// تحديث المفتاح لضمان حذف الإعلانات القديمة وبقاء إعلان ميرادور فقط
+const STORAGE_KEY = 'airhome_properties_v7_mirador_only'; 
+const BOOKING_KEY = 'airhome_bookings_v7_mirador_only';
 
-// بيانات العقارات (تم إضافة العقار الحقيقي في المقدمة)
+// بيانات العقارات (تم إبقاء العقار الحقيقي فقط)
 const SEED_DATA: Property[] = [
   {
     id: 'prop_real_mirador_sea_view',
@@ -42,120 +42,6 @@ const SEED_DATA: Property[] = [
         'https://i.ibb.co/JjWyvmnR/IMG-20251031-WA0067.jpg': 'living',
         'https://i.ibb.co/LDDKjXQr/IMG-20251031-WA0060.jpg': 'bathroom_1',
         'https://i.ibb.co/Z6gbmM9Y/IMG-20251031-WA0054.jpg': 'exterior'
-    }
-  },
-  {
-    id: 'prop_2',
-    title: 'فيلا رائعة مع مسبح في تالا يوسف',
-    description: 'فيلا واسعة وهادئة تقع في منطقة تالا يوسف، مثالية للعائلات الكبيرة. تحتوي على مسبح خاص وحديقة جميلة للاسترخاء.',
-    location: 'تالا يوسف (Tala Youssef)',
-    price: 2500,
-    images: [
-      'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1584622050111-993a426fbf0a?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=800&q=80'
-    ],
-    category: 'مسابح مذهلة',
-    status: 'published',
-    rating: 5.0,
-    ownerId: 'host_123',
-    amenities: ['مسبح', 'موقف سيارات', 'واي فاي', 'مطبخ مجهز', 'تكييف'],
-    maxGuests: 8,
-    bedrooms: 4,
-    bathrooms: 3,
-    livingRooms: 2,
-    kitchens: 1,
-    badge: 'diamond',
-    latitude: 35.2205,
-    longitude: -3.9802,
-    imageCategories: {
-        'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=800&q=80': 'cover',
-        'https://images.unsplash.com/photo-1584622050111-993a426fbf0a?auto=format&fit=crop&w=800&q=80': 'bathroom_1',
-        'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?auto=format&fit=crop&w=800&q=80': 'living'
-    }
-  },
-  {
-    id: 'prop_3',
-    title: 'ستوديو مودرن وسط المدينة',
-    description: 'ستوديو أنيق ومجهز بالكامل في قلب مدينة الحسيمة. قريب من جميع المرافق والمطاعم والمقاهي.',
-    location: 'وسط المدينة (Centre Ville)',
-    price: 400,
-    images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=800&q=80'
-    ],
-    category: 'مدن',
-    status: 'published',
-    rating: 4.7,
-    ownerId: 'host_123',
-    amenities: ['واي فاي', 'تلفاز', 'مطبخ مجهز'],
-    maxGuests: 2,
-    bedrooms: 1,
-    bathrooms: 1,
-    livingRooms: 0,
-    kitchens: 1,
-    badge: 'verified',
-    latitude: 35.2446,
-    longitude: -3.9321,
-    imageCategories: {
-         'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80': 'cover',
-         'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=800&q=80': 'bedroom_1'
-    }
-  },
-  {
-    id: 'prop_4',
-    title: 'منزل شاطئي في كيمادو',
-    description: 'خطوات قليلة تفصلك عن الرمال الذهبية لشاطئ كيمادو. منزل مريح مع تراس يطل على البحر.',
-    location: 'شاطئ كيمادو (Quemado)',
-    price: 1200,
-    images: [
-      'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80'
-    ],
-    category: 'شاطئية',
-    status: 'published',
-    rating: 4.8,
-    ownerId: 'host_123',
-    amenities: ['إطلالة', 'واي فاي', 'قهوة'],
-    maxGuests: 5,
-    bedrooms: 2,
-    bathrooms: 1,
-    livingRooms: 1,
-    kitchens: 1,
-    badge: 'trophy',
-    latitude: 35.2472,
-    longitude: -3.9365,
-    imageCategories: {
-        'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80': 'cover',
-        'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80': 'exterior'
-    }
-  },
-    {
-    id: 'prop_5',
-    title: 'شقة عائلية في حي المنزه',
-    description: 'شقة واسعة ومريحة في حي هادئ وآمن، مناسبة جداً للعائلات. قريبة من الأسواق والمساجد.',
-    location: 'حي المنزه',
-    price: 500,
-    images: [
-      'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&w=800&q=80'
-    ],
-    category: 'رائج',
-    status: 'published',
-    rating: 4.5,
-    ownerId: 'host_123',
-    amenities: ['موقف سيارات', 'غسالة', 'مطبخ مجهز'],
-    maxGuests: 6,
-    bedrooms: 3,
-    bathrooms: 1,
-    livingRooms: 1,
-    kitchens: 1,
-    badge: 'none',
-    latitude: 35.2400,
-    longitude: -3.9300,
-    imageCategories: {
-        'https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=800&q=80': 'cover',
-        'https://images.unsplash.com/photo-1484154218962-a1c002085d2f?auto=format&fit=crop&w=800&q=80': 'kitchen_1'
     }
   }
 ];
