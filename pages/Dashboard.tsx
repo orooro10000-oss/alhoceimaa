@@ -4,8 +4,10 @@ import { Property, Booking } from '../types';
 import PropertyModal from '../components/PropertyModal';
 import { Plus, Pencil, Trash2, Eye, EyeOff, Search, AlertTriangle, Calendar, Check, X, Clock, Building2, CalendarDays, Home, LayoutList, Phone, ChevronRight, Download, Save } from 'lucide-react';
 import { MOCK_USER } from '../constants';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'properties' | 'bookings'>('properties');
   const [myProperties, setMyProperties] = useState<Property[]>([]);
   const [myBookings, setMyBookings] = useState<Booking[]>([]);
@@ -28,6 +30,13 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    // Security Check: If owner mode is not enabled, redirect to home
+    const isOwner = localStorage.getItem('airhome_owner_mode') === 'true';
+    if (!isOwner) {
+        navigate('/');
+        return;
+    }
+
     loadData();
     
     try {
@@ -48,7 +57,7 @@ const Dashboard: React.FC = () => {
     } catch (e) {
         console.error("Error restoring modal state", e);
     }
-  }, []);
+  }, [navigate]);
 
   const handleSave = (property: Property) => {
     PropertyService.save(property);

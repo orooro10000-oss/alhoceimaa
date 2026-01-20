@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, UserCircle, LayoutDashboard, Home, MapPin, X } from 'lucide-react';
+import { Search, UserCircle, LayoutDashboard, Home, MapPin, X, Lock, Check, ChevronRight } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NEIGHBORHOODS } from '../constants';
 
@@ -16,6 +16,11 @@ const Navbar: React.FC = () => {
   // State for "Owner Mode" visibility
   const [showProfile, setShowProfile] = useState(false);
   
+  // Auth Modal State
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [authError, setAuthError] = useState('');
+
   // Long press logic variables
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isPressing, setIsPressing] = useState(false); // For visual feedback
@@ -55,28 +60,54 @@ const Navbar: React.FC = () => {
     }
   };
 
-  // --- Long Press Handler (Simplified) ---
+  // --- Auth Logic ---
+  const handleAuthSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passwordInput === 'tharghent001') {
+          // Success
+          setShowProfile(true);
+          localStorage.setItem('airhome_owner_mode', 'true');
+          setIsAuthModalOpen(false);
+          setPasswordInput('');
+          setAuthError('');
+          
+          // Feedback
+          const toast = document.createElement('div');
+          toast.innerHTML = '<div class="flex items-center gap-2"><span>🔓</span> <span>تم تفعيل وضع المدير</span></div>';
+          toast.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:15px 25px;border-radius:25px;z-index:9999;font-weight:bold;pointer-events:none;backdrop-filter:blur(5px);";
+          document.body.appendChild(toast);
+          setTimeout(() => { if (document.body.contains(toast)) document.body.removeChild(toast); }, 2000);
+      } else {
+          // Error
+          setAuthError('كلمة المرور غير صحيحة');
+          // Shake effect logic could go here
+      }
+  };
+
+  // --- Long Press Handler ---
   const handlePressStart = (e: React.TouchEvent | React.MouseEvent) => {
       setIsPressing(true); // Visual feedback
 
       pressTimer.current = setTimeout(() => {
-          // Toggle Owner Mode
-          const newState = !showProfile;
-          setShowProfile(newState);
-          localStorage.setItem('airhome_owner_mode', String(newState));
-          
-          // Haptic Feedback
-          if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-          
-          // Visual Feedback
-          const msg = newState ? "👁️ وضع المالك: مفعل" : "🙈 وضع المالك: مخفي";
-          const toast = document.createElement('div');
-          toast.textContent = msg;
-          toast.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:15px 25px;border-radius:25px;z-index:9999;font-weight:bold;pointer-events:none;backdrop-filter:blur(5px);box-shadow:0 10px 25px rgba(0,0,0,0.2);";
-          document.body.appendChild(toast);
-          setTimeout(() => {
-              if (document.body.contains(toast)) document.body.removeChild(toast);
-          }, 2000);
+          // If already enabled, disable it without password
+          if (showProfile) {
+            setShowProfile(false);
+            localStorage.setItem('airhome_owner_mode', 'false');
+            
+            const toast = document.createElement('div');
+            toast.textContent = "🙈 وضع المالك: مخفي";
+            toast.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.8);color:white;padding:15px 25px;border-radius:25px;z-index:9999;font-weight:bold;pointer-events:none;backdrop-filter:blur(5px);";
+            document.body.appendChild(toast);
+            setTimeout(() => { if (document.body.contains(toast)) document.body.removeChild(toast); }, 2000);
+            
+            // If on dashboard, go home
+            if (location.pathname === '/dashboard') navigate('/');
+          } else {
+            // If disabled, open password modal
+            setIsAuthModalOpen(true);
+            // Haptic Feedback
+            if (navigator.vibrate) navigator.vibrate([50]);
+          }
           
           setIsPressing(false);
       }, 1000); // 1 Second Long Press
@@ -175,6 +206,16 @@ const Navbar: React.FC = () => {
                 <span>{isDashboard ? 'وضع المسافر' : 'وضع المضيف'}</span>
                 </Link>
             )}
+            {/* Desktop Hidden Toggle for Auth */}
+             <div
+                className="relative cursor-pointer opacity-50 hover:opacity-100 p-2"
+                onMouseDown={handlePressStart}
+                onMouseUp={handlePressEnd}
+                onMouseLeave={handlePressEnd}
+                title="اضغط مطولاً للدخول كمدير"
+            >
+                <div className={`w-2 h-2 rounded-full ${showProfile ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            </div>
           </div>
         </div>
       </nav>
@@ -233,7 +274,7 @@ const Navbar: React.FC = () => {
                 {/* 
                     Home Icon:
                     - Normal Click: Go to Home
-                    - Long Press (1s): Toggle Owner Mode
+                    - Long Press (1s): Open Password Modal
                 */}
                 <div
                     className="relative"
@@ -253,7 +294,7 @@ const Navbar: React.FC = () => {
                     </Link>
                 </div>
                 
-                {/* Profile/Dashboard Link (Visible only if enabled) */}
+                {/* Profile/Dashboard Link (Visible only if authenticated) */}
                 {showProfile && (
                     <Link to="/dashboard" className={`flex flex-col items-center gap-1 min-w-[64px] select-none ${location.pathname === '/dashboard' ? 'text-[#FF385C]' : 'text-gray-500'}`}>
                         <UserCircle size={26} strokeWidth={location.pathname === '/dashboard' ? 2.5 : 2} />
@@ -262,6 +303,56 @@ const Navbar: React.FC = () => {
                 )}
             </div>
         </div>
+      )}
+
+      {/* --- Password Authentication Modal --- */}
+      {isAuthModalOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center relative">
+                  <button 
+                    onClick={() => {
+                        setIsAuthModalOpen(false);
+                        setPasswordInput('');
+                        setAuthError('');
+                    }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                  >
+                      <X size={20} />
+                  </button>
+
+                  <div className="w-16 h-16 bg-black text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                      <Lock size={28} />
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">تسجيل دخول المدير</h3>
+                  <p className="text-gray-500 mb-6 text-sm">أدخل كلمة المرور للوصول إلى لوحة التحكم.</p>
+                  
+                  <form onSubmit={handleAuthSubmit} className="space-y-4">
+                      <div className="relative">
+                          <input 
+                             type="password" 
+                             className={`w-full bg-gray-50 border ${authError ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:ring-black'} rounded-xl px-4 py-3 outline-none focus:ring-2 transition text-center font-bold tracking-widest`}
+                             placeholder="••••••••"
+                             value={passwordInput}
+                             onChange={(e) => setPasswordInput(e.target.value)}
+                             autoFocus
+                          />
+                      </div>
+                      
+                      {authError && (
+                          <p className="text-red-500 text-xs font-bold animate-pulse">{authError}</p>
+                      )}
+
+                      <button 
+                         type="submit" 
+                         className="w-full bg-black text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                      >
+                          <span>دخول</span>
+                          <ChevronRight size={16} className="rotate-180" />
+                      </button>
+                  </form>
+              </div>
+          </div>
       )}
     </>
   );
