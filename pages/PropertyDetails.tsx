@@ -528,22 +528,22 @@ const PropertyDetails: React.FC = () => {
                     alt={`View ${idx}`} 
                     className="w-full h-full object-cover pointer-events-none"
                     />
-                    {/* Gradient Overlay for visibility */}
-                     <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
+                    {/* Gradient Overlay for visibility - REDUCED HEIGHT */}
+                     <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
                 </div>
             ))}
             </div>
          </div>
          
-         {/* FLOATING Fluid Dots for Mobile Header */}
+         {/* FLOATING Fluid Dots for Mobile Header - POSITIONED HIGHER */}
          <div 
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10"
+            className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10"
             dir="ltr"
          >
             {images.map((_, idx) => (
                 <div 
                     key={idx}
-                    className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-sm ${
+                    className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-sm backdrop-blur-[2px] ${
                         idx === currentImageIndex 
                         ? 'bg-white w-5 h-1.5 opacity-100' // Active: Wide pill
                         : 'bg-white/60 w-1.5 h-1.5' // Inactive: Small dot

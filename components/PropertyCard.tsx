@@ -153,8 +153,8 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                         />
                         {/* Subtle dark gradient at top for icon visibility */}
                         <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black/40 to-transparent opacity-60 pointer-events-none"></div>
-                        {/* STRONG bottom gradient to make dots visible */}
-                        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-80 pointer-events-none"></div>
+                        {/* Subtle bottom gradient to make dots visible but not a 'bar' */}
+                        <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-black/50 to-transparent opacity-60 pointer-events-none"></div>
                     </div>
                   ))}
                 </div>
@@ -188,10 +188,10 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                 </>
               )}
 
-              {/* FLOATING Dots Indicator - Overlay on Image */}
+              {/* FLOATING Dots Indicator - Positioned higher on the image */}
               {images.length > 1 && (
                  <div 
-                    className={`absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
                     dir="ltr"
                  >
                     {images.slice(0, 5).map((_, idx) => (
@@ -199,10 +199,10 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                         key={idx}
                         onClick={(e) => handleDotClick(e, idx)}
                         // Fluid "Pill" Animation
-                        className={`rounded-full shadow-sm transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+                        className={`rounded-full shadow-sm backdrop-blur-[2px] transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
                           idx === currentImageIndex 
                             ? 'bg-white w-5 h-1.5 opacity-100' // Active: Wide pill
-                            : 'bg-white/50 w-1.5 h-1.5 hover:bg-white/80' // Inactive: Small dot
+                            : 'bg-white/60 w-1.5 h-1.5 hover:bg-white/90' // Inactive: Small dot
                         }`}
                       />
                     ))}
