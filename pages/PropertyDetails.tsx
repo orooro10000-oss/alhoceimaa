@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { PropertyService, BookingService } from '../services/storage';
 import { Property, Booking } from '../types';
@@ -164,10 +164,13 @@ const PropertyDetails: React.FC = () => {
   // Mobile Booking Sheet State
   const [isMobileBookingOpen, setIsMobileBookingOpen] = useState(false);
 
-  // Drag State
+  // Drag State (General & Lightbox)
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState(0);
   const [currentTranslate, setCurrentTranslate] = useState(0);
+  
+  // Lightbox specific Refs
+  const lightboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (id) {
@@ -190,11 +193,10 @@ const PropertyDetails: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLightboxOpen, property, currentImageIndex]);
 
-  // Close calendar if clicked outside - IMPROVED with Class Check
+  // Close calendar if clicked outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
-        // Check if click is inside any booking calendar wrapper (supports multiple instances)
         if (!target.closest('.booking-calendar-wrapper')) {
             setShowCalendar(false);
             setActiveField(null);
@@ -256,7 +258,7 @@ const PropertyDetails: React.FC = () => {
         return;
     }
 
-    // Check Availability using Service (Double Check)
+    // Check Availability using Service
     const isAvailable = BookingService.isRangeAvailable(property.id, startDate, endDate);
 
     if (!isAvailable) {
@@ -275,8 +277,8 @@ const PropertyDetails: React.FC = () => {
         guestPhone: guestPhone,
         startDate,
         endDate,
-        totalPrice: 0, // No price calculation
-        status: 'pending', // Pending approval
+        totalPrice: 0,
+        status: 'pending',
         createdAt: Date.now()
     };
 
@@ -286,7 +288,7 @@ const PropertyDetails: React.FC = () => {
         setBookingStatus('success');
         setExistingBookings(BookingService.getByProperty(property.id));
         
-        // Prepare WhatsApp Message - Professional & Pure Arabic
+        // Prepare WhatsApp Message
         let message = `
 ✨ *طلب حجز جديد* ✨
 
@@ -309,7 +311,6 @@ const PropertyDetails: React.FC = () => {
         
         window.open(whatsappUrl, '_blank');
 
-        // Reset fields
         setStartDate('');
         setEndDate('');
         setGuestName('');
@@ -384,12 +385,14 @@ const PropertyDetails: React.FC = () => {
     setIsDragging(false);
   };
 
+  // --- Touch Logic (Shared) ---
   const getPositionX = (event: React.MouseEvent | React.TouchEvent) => {
     return event.type.includes('mouse') 
       ? (event as React.MouseEvent).pageX 
       : (event as React.TouchEvent).touches[0].clientX;
   };
 
+  // Mobile Header Slider
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     setIsDragging(true);
     setStartPos(getPositionX(e));
@@ -408,6 +411,29 @@ const PropertyDetails: React.FC = () => {
     if (movedBy < -75) nextImage();
     else if (movedBy > 75) prevImage();
     setCurrentTranslate(0);
+  };
+
+  // --- Lightbox Touch Logic (Separated for clarity) ---
+  const handleLightboxTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
+      // e.stopPropagation(); // Prevent bubbling issues
+      setIsDragging(true);
+      setStartPos(getPositionX(e));
+  };
+
+  const handleLightboxTouchMove = (e: React.TouchEvent | React.MouseEvent) => {
+      // e.stopPropagation();
+      if (!isDragging) return;
+      const currentPosition = getPositionX(e);
+      const diff = currentPosition - startPos;
+      setCurrentTranslate(diff);
+  };
+
+  const handleLightboxTouchEnd = () => {
+      setIsDragging(false);
+      const movedBy = currentTranslate;
+      if (movedBy < -50) nextImage();
+      else if (movedBy > 50) prevImage();
+      setCurrentTranslate(0);
   };
 
   // Helper for Amenity Icons
@@ -472,7 +498,7 @@ const PropertyDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Mobile/Tablet Swipeable Slider --- */}
+      {/* --- Mobile/Tablet Swipeable Slider (Header) --- */}
       <div 
         className="md:hidden relative aspect-[4/3] -mx-4 sm:-mx-8 mb-6 overflow-hidden group bg-gray-100 select-none shadow-sm"
         onMouseDown={handleDragStart}
@@ -482,6 +508,7 @@ const PropertyDetails: React.FC = () => {
         onTouchStart={handleDragStart}
         onTouchMove={handleDragMove}
         onTouchEnd={handleDragEnd}
+        onClick={() => openLightbox(currentImageIndex)}
       >
          <div className="w-full h-full" dir="ltr">
             <div 
@@ -526,29 +553,60 @@ const PropertyDetails: React.FC = () => {
         ))}
       </div>
 
-      {/* --- LIGHTBOX MODAL --- */}
+      {/* --- LIGHTBOX MODAL WITH TOUCH SWIPE --- */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/95 text-white flex flex-col animate-in fade-in duration-300" dir="ltr">
+        <div className="fixed inset-0 z-[150] bg-black/98 text-white flex flex-col animate-in fade-in duration-300 backdrop-blur-sm" dir="ltr">
             <div className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
-                <button onClick={() => setIsLightboxOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition bg-black/20 backdrop-blur-md">
+                <button onClick={() => setIsLightboxOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition bg-black/20 backdrop-blur-md border border-white/10">
                   <X size={24} />
                 </button>
-                <span className="font-semibold text-sm md:text-base tracking-widest opacity-90 uppercase">{currentImageIndex + 1} / {images.length}</span>
+                <span className="font-bold text-sm md:text-base tracking-widest opacity-90 uppercase">{currentImageIndex + 1} / {images.length}</span>
                 <div className="w-10"></div>
             </div>
-            <div className="flex-1 relative overflow-hidden select-none flex flex-col items-center justify-center p-4">
-                 <img 
-                     src={images[currentImageIndex]} 
-                     className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-sm"
-                     alt={`Gallery ${currentImageIndex}`}
-                 />
-                 <div className="mt-6 text-center">
-                     <p className="text-xl font-medium text-white/90">{getCategoryLabel(images[currentImageIndex])}</p>
+            
+            <div 
+                className="flex-1 relative overflow-hidden select-none flex flex-col items-center justify-center p-0 md:p-4 touch-none"
+                onMouseDown={handleLightboxTouchStart}
+                onMouseMove={handleLightboxTouchMove}
+                onMouseUp={handleLightboxTouchEnd}
+                onMouseLeave={handleLightboxTouchEnd}
+                onTouchStart={handleLightboxTouchStart}
+                onTouchMove={handleLightboxTouchMove}
+                onTouchEnd={handleLightboxTouchEnd}
+            >
+                 <div 
+                    className="w-full h-full flex items-center transition-transform duration-300 ease-out"
+                    style={{ 
+                        transform: `translateX(${currentTranslate}px)`,
+                        cursor: isDragging ? 'grabbing' : 'grab'
+                    }}
+                 >
+                     <img 
+                         src={images[currentImageIndex]} 
+                         className="max-w-full max-h-[75vh] md:max-h-[85vh] object-contain shadow-2xl mx-auto pointer-events-none select-none"
+                         alt={`Gallery ${currentImageIndex}`}
+                     />
                  </div>
-                 <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 transition text-white backdrop-blur-md hidden md:flex items-center justify-center border border-white/10">
+                 
+                 <div className="mt-4 text-center z-20 pointer-events-none">
+                     <p className="text-xl font-medium text-white/90 drop-shadow-md">{getCategoryLabel(images[currentImageIndex])}</p>
+                 </div>
+
+                 {/* Dots Indicator for Lightbox */}
+                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md">
+                     {images.map((_, idx) => (
+                        <div 
+                            key={idx}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-white scale-125 shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-white/30'}`}
+                        />
+                     ))}
+                 </div>
+
+                 {/* Desktop Navigation Arrows */}
+                 <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 transition text-white backdrop-blur-md hidden md:flex items-center justify-center border border-white/10 z-30">
                      <ChevronLeft size={32} />
                  </button>
-                 <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 transition text-white backdrop-blur-md hidden md:flex items-center justify-center border border-white/10">
+                 <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 rounded-full bg-white/10 hover:bg-white/20 transition text-white backdrop-blur-md hidden md:flex items-center justify-center border border-white/10 z-30">
                      <ChevronRight size={32} />
                  </button>
             </div>
@@ -645,8 +703,6 @@ const PropertyDetails: React.FC = () => {
                 {property.description}
              </p>
            </div>
-           
-           {/* Map section removed as per request */}
 
         </div>
 
@@ -724,7 +780,7 @@ const PropertyDetails: React.FC = () => {
         </div>
       </div>
 
-      {/* --- Mobile Fixed Bottom Bar (Replaces Floating Island) --- */}
+      {/* --- Mobile Fixed Bottom Bar --- */}
       <div className="fixed bottom-0 left-0 w-full md:hidden z-[100] bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.08)] pb-safe animate-in slide-in-from-bottom-full duration-500">
           <div className="p-4 flex items-center justify-between">
             <div className="flex flex-col">
