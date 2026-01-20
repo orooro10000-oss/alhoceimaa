@@ -1,10 +1,11 @@
 import { Property, Booking } from '../types';
 
-// مفتاح التخزين الرئيسي والثابت - لن يتم تغييره مستقبلاً لضمان حفظ تعديلاتك
-const STORAGE_KEY = 'airhome_master_data_v1'; 
-const BOOKING_KEY = 'airhome_master_bookings_v1';
+// تحديث المفتاح إلى الإصدار 2 (v2)
+// هذا التغيير ضروري جداً لكي يقوم Netlify والمتصفحات بتحميل البيانات الجديدة وتجاهل القديمة
+const STORAGE_KEY = 'airhome_master_data_v2_deployed'; 
+const BOOKING_KEY = 'airhome_master_bookings_v2_deployed';
 
-// بيانات العقارات (البيانات الأولية بالصور الصحيحة)
+// بيانات العقارات (البيانات الأولية بالصور الصحيحة وروابط ibb)
 const SEED_DATA: Property[] = [
   {
     id: 'prop_real_mirador_sea_view',
@@ -66,9 +67,9 @@ const SEED_DATA: Property[] = [
   }
 ];
 
-// عند بدء التطبيق: 
-// 1. إذا لم يكن هناك تخزين، نستخدم SEED_DATA
-// 2. إذا كان هناك تخزين، نستخدمه كما هو (بما في ذلك التعديلات السابقة)
+// منطق التحميل:
+// نقوم بالتحقق من وجود بيانات مخزنة تحت المفتاح الجديد (v2)
+// إذا لم توجد، نقوم بحفظ البيانات الأولية (SEED_DATA) التي تحتوي على التعديلات الجديدة
 if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
 }
