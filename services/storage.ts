@@ -1,11 +1,46 @@
 import { Property, Booking } from '../types';
 
-// تحديث المفتاح إلى الإصدار 4 (v4) لبدء تطبيق فارغ
-const STORAGE_KEY = 'airhome_master_data_v4_empty'; 
-const BOOKING_KEY = 'airhome_master_bookings_v4_empty';
+// تحديث المفتاح إلى الإصدار 6 (v6) لتحديث الصور
+const STORAGE_KEY = 'airhome_master_data_v6_matadiro_imgs'; 
+const BOOKING_KEY = 'airhome_master_bookings_v6_matadiro_imgs';
 
-// بيانات العقارات (فارغة الآن)
-const SEED_DATA: Property[] = [];
+// بيانات العقارات (تم تحديث روابط الصور)
+const SEED_DATA: Property[] = [
+  {
+    id: 'prop_matadiro_centre_ville',
+    title: 'MATADIRO',
+    description: 'استمتع بإقامة استثنائية في MATADIRO بقلب وسط المدينة. شقة شاطئية فاخرة بتصنيف ماسي، مجهزة بكل وسائل الراحة من واي فاي وتلفاز وغسالة ومطبخ متكامل. موقع مثالي قريب من البحر والمرافق الحيوية.',
+    location: 'وسط المدينة (Centre Ville)',
+    price: 400,
+    category: 'شاطئية',
+    status: 'published',
+    rating: 5.0,
+    ownerId: 'host_123',
+    amenities: ['واي فاي', 'تلفاز', 'غسالة', 'مطبخ مجهز', 'ثلاجة', 'قريب من الشاطئ'],
+    maxGuests: 4,
+    bedrooms: 1,
+    bathrooms: 1,
+    livingRooms: 1,
+    kitchens: 1,
+    badge: 'diamond',
+    images: [
+      'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg', // Living (Cover) - غرفة المعيشة
+      'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg', // Bedroom - غرفة نوم 1
+      'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg', // Bedroom - غرفة نوم 1
+      'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg', // Bedroom - غرفة نوم 1
+      'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg', // Kitchen - مطبخ
+      'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg'  // Bathroom - حمام
+    ],
+    imageCategories: {
+        'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg': 'living',
+        'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg': 'bedroom_1',
+        'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg': 'bedroom_1',
+        'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg': 'bedroom_1',
+        'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg': 'kitchen_1',
+        'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg': 'bathroom_1'
+    }
+  }
+];
 
 // منطق التحميل:
 if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
