@@ -535,18 +535,18 @@ const PropertyDetails: React.FC = () => {
             </div>
          </div>
          
-         {/* Fluid Dots for Mobile Header */}
+         {/* FLOATING Fluid Dots for Mobile Header */}
          <div 
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10"
             dir="ltr"
          >
             {images.map((_, idx) => (
                 <div 
                     key={idx}
-                    className={`h-1.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-sm ${
+                    className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-sm ${
                         idx === currentImageIndex 
-                        ? 'bg-white w-4 opacity-100' 
-                        : 'bg-white/60 w-1.5'
+                        ? 'bg-white w-5 h-1.5 opacity-100' // Active: Wide pill
+                        : 'bg-white/60 w-1.5 h-1.5' // Inactive: Small dot
                     }`}
                 />
             ))}
@@ -615,16 +615,16 @@ const PropertyDetails: React.FC = () => {
                      <p className="text-xl font-medium text-white/90 drop-shadow-md">{getCategoryLabel(images[currentImageIndex])}</p>
                  </div>
 
-                 {/* Fluid Dots Indicator for Lightbox */}
-                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20 p-3 rounded-full bg-black/40 backdrop-blur-md border border-white/5">
+                 {/* FLOATING Fluid Dots Indicator for Lightbox */}
+                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 p-2.5 rounded-full bg-black/30 backdrop-blur-md border border-white/5">
                      {images.map((_, idx) => (
                         <div 
                             key={idx}
                             // Fluid Pill Transition
-                            className={`h-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-[0_0_10px_rgba(255,255,255,0.5)] ${
+                            className={`rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-[0_0_10px_rgba(255,255,255,0.5)] ${
                                 idx === currentImageIndex 
-                                ? 'bg-white w-6 scale-100 opacity-100' 
-                                : 'bg-white/40 w-2 hover:bg-white/60'
+                                ? 'bg-white w-6 h-1.5 opacity-100' // Active: Wide pill
+                                : 'bg-white/40 w-1.5 h-1.5 hover:bg-white/60' // Inactive: Small dot
                             }`}
                         />
                      ))}

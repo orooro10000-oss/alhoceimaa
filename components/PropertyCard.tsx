@@ -152,9 +152,9 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                           }`}
                         />
                         {/* Subtle dark gradient at top for icon visibility */}
-                        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-black/40 to-transparent opacity-60"></div>
-                        {/* Subtle dark gradient at bottom for dots visibility */}
-                        <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
+                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-black/40 to-transparent opacity-60 pointer-events-none"></div>
+                        {/* STRONG bottom gradient to make dots visible */}
+                        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-80 pointer-events-none"></div>
                     </div>
                   ))}
                 </div>
@@ -188,21 +188,21 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                 </>
               )}
 
-              {/* Fluid Dots Indicator - Overlay on Image */}
+              {/* FLOATING Dots Indicator - Overlay on Image */}
               {images.length > 1 && (
                  <div 
-                    className={`absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 md:opacity-0 opacity-100'}`}
+                    className={`absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
                     dir="ltr"
                  >
                     {images.slice(0, 5).map((_, idx) => (
                       <button 
                         key={idx}
                         onClick={(e) => handleDotClick(e, idx)}
-                        // Fluid transition for width to create "pill" effect
-                        className={`h-1.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
+                        // Fluid "Pill" Animation
+                        className={`rounded-full shadow-sm transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
                           idx === currentImageIndex 
-                            ? 'bg-white w-4 scale-100 opacity-100' 
-                            : 'bg-white/60 w-1.5 hover:bg-white/80'
+                            ? 'bg-white w-5 h-1.5 opacity-100' // Active: Wide pill
+                            : 'bg-white/50 w-1.5 h-1.5 hover:bg-white/80' // Inactive: Small dot
                         }`}
                       />
                     ))}
@@ -210,7 +210,7 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
               )}
             </div>
 
-            {/* Card Content with improved hierarchy */}
+            {/* Card Content */}
             <div className="flex flex-col gap-1 px-1">
               <div className="flex justify-between items-start">
                 <h3 className="font-bold text-gray-900 text-[15px] leading-tight line-clamp-1 group-hover:text-black transition-colors">{property.title}</h3>
