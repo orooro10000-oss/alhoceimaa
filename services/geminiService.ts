@@ -32,3 +32,36 @@ export const generateDescription = async (title: string, location: string, categ
     return "استمتع بالراحة والأناقة في هذا العقار الفريد. مثالي لعطلتك القادمة.";
   }
 };
+
+export const classifyImage = async (base64Image: string): Promise<string> => {
+  try {
+    const ai = getClient();
+    // Use gemini-3-flash-preview for multimodal (image+text) understanding
+    const model = 'gemini-3-flash-preview'; 
+
+    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, "");
+
+    const response = await ai.models.generateContent({
+      model: model,
+      contents: {
+        parts: [
+            { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } },
+            { text: "Classify this image into one category: 'living' (Living Room/Salon), 'bedroom' (Bedroom), 'kitchen' (Kitchen), 'bathroom' (Bathroom/Toilet), 'exterior' (Building/Pool/Terrace/View). Return ONLY the category word." }
+        ]
+      }
+    });
+
+    const text = response.text?.toLowerCase().trim() || 'other';
+    
+    if (text.includes('living')) return 'living';
+    if (text.includes('bedroom')) return 'bedroom';
+    if (text.includes('kitchen')) return 'kitchen';
+    if (text.includes('bath')) return 'bathroom';
+    if (text.includes('exterior') || text.includes('pool') || text.includes('terrace') || text.includes('view')) return 'exterior';
+    
+    return 'other';
+  } catch (error) {
+    console.error("Image Classification Error:", error);
+    return 'other';
+  }
+};

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Property } from '../types';
 import { CATEGORIES, NEIGHBORHOODS, SUGGESTED_TITLES } from '../constants';
-import { generateDescription } from '../services/geminiService';
+import { generateDescription, classifyImage } from '../services/geminiService';
 import { X, Sparkles, Loader2, Upload, Trash2, Camera, Minus, Plus, BedDouble, Bath, Armchair, Utensils, Users, Image as ImageIcon, Star, FolderOpen, ArrowDown, Wifi, Tv, Car, Wind, Waves, Snowflake, WashingMachine, Coffee, Mountain, MapPin, Crown, Trophy, Gem, ShieldCheck, Ban } from 'lucide-react';
 
 interface Props {
@@ -100,6 +100,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // State for image analysis
   const [isSaving, setIsSaving] = useState(false); 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -210,17 +211,31 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
     e.preventDefault();
     if (e.target.files) {
       const files = Array.from(e.target.files) as File[];
+      setIsAnalyzing(true);
       
       try {
         const base64Images = await Promise.all(files.map(file => compressImage(file)));
+        
+        // Parallel classification using Gemini
+        const classifications = await Promise.all(base64Images.map(img => classifyImage(img)));
         
         setFormData(prev => {
             let newImages = [...(prev.images || [])];
             const newCategories = { ...(prev.imageCategories || {}) };
 
-            base64Images.forEach(img => {
+            base64Images.forEach((img, idx) => {
                 newImages.push(img);
-                newCategories[img] = 'other';
+                const type = classifications[idx];
+                
+                // Smart mapping logic
+                let category = 'other';
+                if (type === 'living') category = 'living';
+                else if (type === 'exterior') category = 'exterior';
+                else if (type === 'bedroom') category = 'bedroom_1'; // Default to first bedroom
+                else if (type === 'kitchen') category = 'kitchen_1'; // Default to first kitchen
+                else if (type === 'bathroom') category = 'bathroom_1'; // Default to first bathroom
+                
+                newCategories[img] = category;
             });
 
             return {
@@ -230,8 +245,10 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
             };
         });
       } catch (err) {
-        console.error("Image compression error:", err);
-        alert("حدث خطأ أثناء معالجة الصور. حاول استخدام صور أصغر.");
+        console.error("Image processing error:", err);
+        alert("حدث خطأ أثناء معالجة الصور.");
+      } finally {
+        setIsAnalyzing(false);
       }
 
       if (fileInputRef.current) {
@@ -545,10 +562,11 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
                 <button
                     type="button"
                     onClick={handleBulkUploadClick}
-                    className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow-md"
+                    disabled={isAnalyzing}
+                    className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow-md"
                 >
-                    <Upload size={16} />
-                    رفع صور جماعي
+                    {isAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                    {isAnalyzing ? 'جارٍ التحليل...' : 'رفع صور جماعي'}
                 </button>
              </div>
              

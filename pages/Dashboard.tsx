@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PropertyService, BookingService } from '../services/storage';
 import { Property, Booking } from '../types';
 import PropertyModal from '../components/PropertyModal';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Search, AlertTriangle, Calendar, Check, X, Clock, Building2, CalendarDays, Home, LayoutList, Phone, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Search, AlertTriangle, Calendar, Check, X, Clock, Building2, CalendarDays, Home, LayoutList, Phone, ChevronRight, Download, Save } from 'lucide-react';
 import { MOCK_USER } from '../constants';
 
 const Dashboard: React.FC = () => {
@@ -23,7 +23,6 @@ const Dashboard: React.FC = () => {
     setMyProperties(props);
     
     // In a real backend, we would filter bookings where property.ownerId == currentUser
-    // Since we are mocking, we just get all bookings for now, assuming user is THE host
     const bookings = BookingService.getAll().sort((a, b) => b.createdAt - a.createdAt);
     setMyBookings(bookings);
   };
@@ -57,6 +56,15 @@ const Dashboard: React.FC = () => {
     setEditingProperty(null);
     localStorage.removeItem('airhome_modal_active'); 
     loadData();
+    
+    // Simple visual feedback
+    const toast = document.createElement('div');
+    toast.innerHTML = '<div class="flex items-center gap-2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> تم حفظ التعديلات بنجاح</div>';
+    toast.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#10B981;color:white;padding:12px 24px;border-radius:50px;z-index:9999;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;";
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        if (document.body.contains(toast)) document.body.removeChild(toast);
+    }, 3000);
   };
 
   const handleCloseModal = () => {
@@ -101,6 +109,20 @@ const Dashboard: React.FC = () => {
     PropertyService.save({ ...property, status: newStatus });
     loadData();
   };
+  
+  // New feature: Download Backup
+  const handleDownloadBackup = () => {
+      const data = PropertyService.exportData();
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `airhome_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+  };
 
   const handleBookingAction = (id: string, action: 'confirmed' | 'rejected') => {
       BookingService.updateStatus(id, action);
@@ -119,13 +141,23 @@ const Dashboard: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">لوحة التحكم</h1>
           <p className="text-sm md:text-base text-gray-500 mt-1">أدر عقاراتك وحجوزاتك وأرباحك.</p>
         </div>
-        <button
-          onClick={handleAddNew}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#d9324e] text-white px-5 py-3 rounded-xl font-semibold transition shadow-sm hover:shadow-md active:scale-95"
-        >
-          <Plus size={20} />
-          أضف عقار جديد
-        </button>
+        <div className="flex gap-2 w-full md:w-auto">
+             <button
+              onClick={handleDownloadBackup}
+              className="flex items-center justify-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-3 rounded-xl font-semibold transition shadow-sm"
+              title="تنزيل نسخة احتياطية من البيانات"
+            >
+              <Download size={20} />
+              <span className="hidden sm:inline">نسخة احتياطية</span>
+            </button>
+            <button
+              onClick={handleAddNew}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#d9324e] text-white px-5 py-3 rounded-xl font-semibold transition shadow-sm hover:shadow-md active:scale-95"
+            >
+              <Plus size={20} />
+              أضف عقار جديد
+            </button>
+        </div>
       </div>
 
       {/* Stats Cards - Horizontal Scroll on Mobile */}
