@@ -515,22 +515,45 @@ const PropertyDetails: React.FC = () => {
                 className="w-full h-full flex"
                 style={{ 
                     transform: `translateX(calc(-${currentImageIndex * 100}% + ${currentTranslate}px))`,
-                    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+                    // Improved physics for mobile slider as well
+                    transition: isDragging ? 'none' : 'transform 0.6s cubic-bezier(0.19, 1, 0.22, 1)',
                     cursor: isDragging ? 'grabbing' : 'grab'
                 }}
             >
             {images.map((img, idx) => (
-                <img 
-                key={idx}
-                src={img} 
-                draggable="false"
-                alt={`View ${idx}`} 
-                className="w-full h-full object-cover flex-shrink-0 pointer-events-none"
-                />
+                <div key={idx} className="w-full h-full flex-shrink-0 relative">
+                    <img 
+                    src={img} 
+                    draggable="false"
+                    alt={`View ${idx}`} 
+                    className="w-full h-full object-cover pointer-events-none"
+                    />
+                    {/* Gradient Overlay for visibility */}
+                     <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
+                </div>
             ))}
             </div>
          </div>
-         <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-bold tracking-wide pointer-events-none border border-white/10">
+         
+         {/* Fluid Dots for Mobile Header */}
+         <div 
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10"
+            dir="ltr"
+         >
+            {images.map((_, idx) => (
+                <div 
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-sm ${
+                        idx === currentImageIndex 
+                        ? 'bg-white w-4 opacity-100' 
+                        : 'bg-white/60 w-1.5'
+                    }`}
+                />
+            ))}
+         </div>
+         
+         {/* Counter (Top Right) */}
+         <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white text-xs px-3 py-1.5 rounded-full font-bold tracking-wide pointer-events-none border border-white/10">
             {currentImageIndex + 1} / {images.length}
          </div>
       </div>
@@ -592,12 +615,17 @@ const PropertyDetails: React.FC = () => {
                      <p className="text-xl font-medium text-white/90 drop-shadow-md">{getCategoryLabel(images[currentImageIndex])}</p>
                  </div>
 
-                 {/* Dots Indicator for Lightbox */}
-                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20 p-2 rounded-full bg-black/20 backdrop-blur-md">
+                 {/* Fluid Dots Indicator for Lightbox */}
+                 <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 z-20 p-3 rounded-full bg-black/40 backdrop-blur-md border border-white/5">
                      {images.map((_, idx) => (
                         <div 
                             key={idx}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-white scale-125 shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-white/30'}`}
+                            // Fluid Pill Transition
+                            className={`h-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] shadow-[0_0_10px_rgba(255,255,255,0.5)] ${
+                                idx === currentImageIndex 
+                                ? 'bg-white w-6 scale-100 opacity-100' 
+                                : 'bg-white/40 w-2 hover:bg-white/60'
+                            }`}
                         />
                      ))}
                  </div>

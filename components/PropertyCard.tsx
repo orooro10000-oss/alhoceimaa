@@ -135,7 +135,8 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                   className="w-full h-full flex"
                   style={{ 
                     transform: `translateX(calc(-${currentImageIndex * 100}% + ${currentTranslate}px))`,
-                    transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    // Custom bezier for luxurious, slow fluid movement (approx 0.7s)
+                    transition: isDragging ? 'none' : 'transform 0.7s cubic-bezier(0.19, 1, 0.22, 1)', 
                     cursor: isDragging ? 'grabbing' : 'grab'
                   }}
                 >
@@ -151,7 +152,9 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                           }`}
                         />
                         {/* Subtle dark gradient at top for icon visibility */}
-                        <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black/30 to-transparent opacity-60"></div>
+                        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-black/40 to-transparent opacity-60"></div>
+                        {/* Subtle dark gradient at bottom for dots visibility */}
+                        <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-black/40 to-transparent opacity-60"></div>
                     </div>
                   ))}
                 </div>
@@ -185,20 +188,21 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                 </>
               )}
 
-              {/* Dots Indicator - Fade in on hover */}
+              {/* Fluid Dots Indicator - Overlay on Image */}
               {images.length > 1 && (
                  <div 
-                    className={`absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 p-1.5 rounded-full transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 md:opacity-0 opacity-100'}`}
                     dir="ltr"
                  >
                     {images.slice(0, 5).map((_, idx) => (
                       <button 
                         key={idx}
                         onClick={(e) => handleDotClick(e, idx)}
-                        className={`rounded-full transition-all duration-300 shadow-sm box-content border border-black/5 ${
+                        // Fluid transition for width to create "pill" effect
+                        className={`h-1.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${
                           idx === currentImageIndex 
-                            ? 'bg-white w-2 h-2 opacity-100 scale-110' 
-                            : 'bg-white/60 w-1.5 h-1.5 hover:bg-white/90'
+                            ? 'bg-white w-4 scale-100 opacity-100' 
+                            : 'bg-white/60 w-1.5 hover:bg-white/80'
                         }`}
                       />
                     ))}
