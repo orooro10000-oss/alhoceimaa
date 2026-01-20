@@ -258,7 +258,6 @@ const Dashboard: React.FC = () => {
                             <tr>
                             <th className="px-6 py-4 text-start">العقار</th>
                             <th className="px-6 py-4 text-start">الحالة</th>
-                            <th className="px-6 py-4 text-start">السعر</th>
                             <th className="px-6 py-4 text-end">إجراءات</th>
                             </tr>
                         </thead>
@@ -279,7 +278,6 @@ const Dashboard: React.FC = () => {
                                     {property.status === 'published' ? 'منشور' : 'مخفي'}
                                 </button>
                                 </td>
-                                <td className="px-6 py-4 font-medium text-gray-700">{property.price} د.م</td>
                                 <td className="px-6 py-4 text-end">
                                 <div className="flex items-center justify-end gap-3">
                                     <button onClick={(e) => handleEdit(e, property)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"><Pencil size={16} /></button>
@@ -304,7 +302,6 @@ const Dashboard: React.FC = () => {
                                 </div>
                                 <p className="text-xs text-gray-500 mb-2">{property.location}</p>
                                 <div className="flex items-center justify-between mt-2">
-                                    <span className="font-bold text-gray-900">{property.price} د.م</span>
                                     <button 
                                         onClick={(e) => toggleStatus(e, property)}
                                         className={`text-[10px] px-2 py-0.5 rounded-full border ${property.status === 'published' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'}`}
@@ -337,7 +334,6 @@ const Dashboard: React.FC = () => {
                                 <th className="px-6 py-4 text-start">العقار</th>
                                 <th className="px-6 py-4 text-start">الضيف</th>
                                 <th className="px-6 py-4 text-start">التواريخ</th>
-                                <th className="px-6 py-4 text-start">السعر</th>
                                 <th className="px-6 py-4 text-start">الحالة</th>
                                 <th className="px-6 py-4 text-end">إجراءات</th>
                             </tr>
@@ -357,7 +353,6 @@ const Dashboard: React.FC = () => {
                                             <span className="text-red-500">{booking.endDate}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 font-bold">{booking.totalPrice} د.م</td>
                                     <td className="px-6 py-4">
                                         {booking.status === 'pending' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">انتظار</span>}
                                         {booking.status === 'confirmed' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">مؤكد</span>}
@@ -406,10 +401,9 @@ const Dashboard: React.FC = () => {
                             </div>
 
                             <div className="flex items-center justify-between border-t pt-3 mt-2">
-                                <span className="font-bold text-lg">{booking.totalPrice} د.م</span>
                                 
                                 {booking.status === 'pending' ? (
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 w-full justify-end">
                                         <button onClick={() => handleBookingAction(booking.id, 'rejected')} className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 text-xs font-semibold">رفض</button>
                                         <button onClick={() => handleBookingAction(booking.id, 'confirmed')} className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-xs font-semibold shadow-sm">قبول</button>
                                     </div>

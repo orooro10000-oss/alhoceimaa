@@ -306,8 +306,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
     // Validation
     if (!formData.title?.trim()) { alert("يرجى كتابة عنوان العقار"); setIsSaving(false); return; }
     if (!formData.location?.trim()) { alert("يرجى تحديد الموقع"); setIsSaving(false); return; }
-    if (!formData.price || Number(formData.price) <= 0) { alert("يرجى تحديد سعر الليلة"); setIsSaving(false); return; }
-
+    
     let finalImages = [...(formData.images || [])];
     const categories = formData.imageCategories || {};
 
@@ -325,7 +324,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
 
     const finalData = {
         ...formData,
-        price: Number(formData.price),
+        price: 0, // Set price to 0 or remove it from display logic
         rating: Number(formData.rating), 
         images: finalImages,
         id: initialData?.id || Date.now().toString(),
@@ -492,13 +491,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
                 </div>
             </div>
 
-             <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">السعر (د.م) <span className="text-red-500">*</span></label>
-                    <input type="number" className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition"
-                        value={formData.price} onChange={e => setFormData({ ...formData, price: Number(e.target.value) })} />
-                </div>
-                
+             <div className="grid grid-cols-2 gap-6">
                 {/* Rating Input */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">التقييم (0-5)</label>
@@ -509,7 +502,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
                     </div>
                 </div>
 
-                 <div className="space-y-2 col-span-2 lg:col-span-1">
+                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">الفئة</label>
                     <select className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition"
                         value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>

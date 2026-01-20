@@ -1,43 +1,55 @@
 import { Property, Booking } from '../types';
 
-// تحديث المفتاح إلى الإصدار 6 (v6) لتحديث الصور
-const STORAGE_KEY = 'airhome_master_data_v6_matadiro_imgs'; 
-const BOOKING_KEY = 'airhome_master_bookings_v6_matadiro_imgs';
+// تحديث المفتاح إلى الإصدار 7 (v7) لتحديث بيانات HIGH STUDIO
+const STORAGE_KEY = 'airhome_master_data_v7_highstudio'; 
+const BOOKING_KEY = 'airhome_master_bookings_v7_highstudio';
 
-// بيانات العقارات (تم تحديث روابط الصور)
+// بيانات العقارات (تم تحديث الصور والعنوان)
 const SEED_DATA: Property[] = [
   {
     id: 'prop_matadiro_centre_ville',
-    title: 'MATADIRO',
-    description: 'استمتع بإقامة استثنائية في MATADIRO بقلب وسط المدينة. شقة شاطئية فاخرة بتصنيف ماسي، مجهزة بكل وسائل الراحة من واي فاي وتلفاز وغسالة ومطبخ متكامل. موقع مثالي قريب من البحر والمرافق الحيوية.',
+    title: 'HIGH STUDIO',
+    description: 'استمتع بإقامة استثنائية في HIGH STUDIO بقلب وسط المدينة. شقة شاطئية فاخرة بتصنيف ماسي، مجهزة بكل وسائل الراحة من واي فاي وتلفاز وتكييف ومطبخ متكامل. موقع مثالي قريب من البحر والمرافق الحيوية.',
     location: 'وسط المدينة (Centre Ville)',
-    price: 400,
+    price: 0,
     category: 'شاطئية',
     status: 'published',
     rating: 5.0,
     ownerId: 'host_123',
-    amenities: ['واي فاي', 'تلفاز', 'غسالة', 'مطبخ مجهز', 'ثلاجة', 'قريب من الشاطئ'],
-    maxGuests: 4,
+    amenities: ['واي فاي', 'تلفاز', 'تكييف', 'غسالة', 'مطبخ مجهز', 'ثلاجة', 'قريب من الشاطئ'],
+    maxGuests: 3,
     bedrooms: 1,
     bathrooms: 1,
     livingRooms: 1,
     kitchens: 1,
     badge: 'diamond',
     images: [
-      'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg', // Living (Cover) - غرفة المعيشة
-      'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg', // Bedroom - غرفة نوم 1
-      'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg', // Bedroom - غرفة نوم 1
-      'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg', // Bedroom - غرفة نوم 1
-      'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg', // Kitchen - مطبخ
-      'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg'  // Bathroom - حمام
+      'https://i.ibb.co/g5wN6cT/IMG-20251031-WA0060.jpg', // Cover - غلاف
+      'https://i.ibb.co/DP0Wfh3L/IMG-20251031-WA0058.jpg', // Living
+      'https://i.ibb.co/zhK5cQ44/IMG-20251031-WA0057.jpg', // Living
+      'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg', // Living
+      'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg', // Bedroom
+      'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg', // Bedroom
+      'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg', // Bedroom
+      'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg', // Kitchen
+      'https://i.ibb.co/YFHssxx5/IMG-20251031-WA0069.jpg', // Bathroom
+      'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg', // Bathroom
+      'https://i.ibb.co/b5bYwTKm/IMG-20251031-WA0055.jpg', // Exterior
+      'https://i.ibb.co/TBNMk9xM/IMG-20251031-WA0056.jpg'  // Exterior
     ],
     imageCategories: {
+        'https://i.ibb.co/g5wN6cT/IMG-20251031-WA0060.jpg': 'cover',
+        'https://i.ibb.co/DP0Wfh3L/IMG-20251031-WA0058.jpg': 'living',
+        'https://i.ibb.co/zhK5cQ44/IMG-20251031-WA0057.jpg': 'living',
         'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg': 'living',
         'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg': 'bedroom_1',
         'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg': 'bedroom_1',
         'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg': 'bedroom_1',
         'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg': 'kitchen_1',
-        'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg': 'bathroom_1'
+        'https://i.ibb.co/YFHssxx5/IMG-20251031-WA0069.jpg': 'bathroom_1',
+        'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg': 'bathroom_1',
+        'https://i.ibb.co/b5bYwTKm/IMG-20251031-WA0055.jpg': 'exterior',
+        'https://i.ibb.co/TBNMk9xM/IMG-20251031-WA0056.jpg': 'exterior'
     }
   }
 ];

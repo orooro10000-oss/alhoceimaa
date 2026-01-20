@@ -217,17 +217,6 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
               </div>
               
               <p className="text-gray-500 text-xs leading-snug line-clamp-1 group-hover:text-gray-700 transition-colors mt-0.5">{property.category}</p>
-              
-              <div className="mt-1 flex items-center gap-1">
-                {property.price ? (
-                    <>
-                        <span className="font-semibold text-gray-900 text-sm">MAD{property.price}</span>
-                        <span className="text-gray-900 text-xs">لليلة</span>
-                    </>
-                ) : (
-                    <span className="font-semibold text-gray-900 text-xs">تواصل للسعر</span>
-                )}
-              </div>
             </div>
         </div>
       </Link>
