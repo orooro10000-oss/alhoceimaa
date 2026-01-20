@@ -113,7 +113,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
 
   useEffect(() => {
     if (isOpen) {
-      let startingData = initialData ? { ...initialData } : {
+      let startingData: Partial<Property> = initialData ? { ...initialData } : {
         title: '',
         location: '',
         price: 0,
@@ -121,7 +121,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
         description: '',
         images: [],
         imageCategories: {},
-        status: 'published' as const,
+        status: 'published',
         rating: 5.0,
         ownerId: 'host_123',
         maxGuests: 2,
