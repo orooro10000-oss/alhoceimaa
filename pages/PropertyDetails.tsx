@@ -342,7 +342,7 @@ const PropertyDetails: React.FC = () => {
     if (!property?.imageCategories) return '';
     const catCode = property.imageCategories[imgUrl];
     if (!catCode) return '';
-    if (catCode === 'cover') return 'صورة الغلاف';
+    if (catCode === 'cover') return ''; // Removed 'صورة الغلاف' to show nothing
     if (catCode === 'living') return 'غرفة المعيشة';
     if (catCode === 'exterior') return 'الخارج / المرافق';
     if (catCode.startsWith('bedroom_')) {
