@@ -535,7 +535,7 @@ const PropertyDetails: React.FC = () => {
             </div>
          </div>
          
-         {/* FLOATING Fluid Dots for Mobile Header - POSITIONED HIGHER */}
+         {/* FLOATING Fluid Dots for Mobile Header - POSITIONED HIGHER (bottom-5) without container */}
          <div 
             className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10"
             dir="ltr"
@@ -578,7 +578,7 @@ const PropertyDetails: React.FC = () => {
 
       {/* --- LIGHTBOX MODAL WITH TOUCH SWIPE --- */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 z-[150] bg-black/98 text-white flex flex-col animate-in fade-in duration-300 backdrop-blur-sm" dir="ltr">
+        <div className="fixed inset-0 z-[150] bg-black text-white flex flex-col animate-in fade-in duration-300" dir="ltr">
             <div className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
                 <button onClick={() => setIsLightboxOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition bg-black/20 backdrop-blur-md border border-white/10">
                   <X size={24} />

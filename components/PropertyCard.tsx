@@ -188,7 +188,7 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                 </>
               )}
 
-              {/* FLOATING Dots Indicator - Positioned higher on the image */}
+              {/* FLOATING Dots Indicator - Positioned higher on the image (bottom-5) without container */}
               {images.length > 1 && (
                  <div 
                     className={`absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}
