@@ -22,9 +22,11 @@ const Home: React.FC = () => {
   const [activeNeighborhood, setActiveNeighborhood] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load only published properties for guests
-    const data = PropertyService.getPublished();
-    setProperties(data);
+    // Subscribe to published properties for guests
+    const unsubscribe = PropertyService.subscribeToPublished((data) => {
+      setProperties(data);
+    });
+    return () => unsubscribe();
   }, []);
 
   // Filter Categories: Only show categories that have active properties
@@ -34,7 +36,7 @@ const Home: React.FC = () => {
   }, [properties]);
 
   // Filter Logic (Category & Search Term)
-  const getFilteredProperties = (baseList: Property[]) => {
+  const getFilteredProperties = React.useCallback((baseList: Property[]) => {
     let filtered = baseList;
 
     if (selectedCategory) {
@@ -50,9 +52,9 @@ const Home: React.FC = () => {
         );
     }
     return filtered;
-  };
+  }, [selectedCategory, searchTerm]);
 
-  const filteredGlobalProperties = useMemo(() => getFilteredProperties(properties), [properties, selectedCategory, searchTerm]);
+  const filteredGlobalProperties = useMemo(() => getFilteredProperties(properties), [properties, getFilteredProperties]);
 
   const clearSearch = () => {
       setSearchParams({});
@@ -67,12 +69,20 @@ const Home: React.FC = () => {
     // 1. Iterate through the strict list of NEIGHBORHOODS to maintain vertical order
     NEIGHBORHOODS.forEach(hood => {
         // Prepare keywords: "ميرادور (Mirador)" -> ["ميرادور", "Mirador"]
-        const keywords = hood.split(/[\(\)]/).map(s => s.trim()).filter(s => s.length > 0);
+        const keywords = hood.split(/[()]/).map(s => s.trim()).filter(s => s.length > 0);
 
         const matches = filteredGlobalProperties.filter(p => {
+            // Check explicit neighborhood field first
+            if (p.neighborhood === hood) return true;
+            
             const loc = p.location.toLowerCase();
-            // Check if property location contains ANY of the keywords
-            return keywords.some(k => loc.includes(k.toLowerCase()));
+            const title = p.title.toLowerCase();
+            
+            // Check if property location or title contains ANY of the keywords
+            return keywords.some(k => {
+                const lowerK = k.toLowerCase();
+                return loc.includes(lowerK) || title.includes(lowerK);
+            });
         });
 
         if (matches.length > 0) {
@@ -131,144 +141,123 @@ const Home: React.FC = () => {
 
   // --- View: Main Home (Vertical Sections) ---
   return (
-    <div className="space-y-6 pb-20 relative min-h-screen">
+    <div className="space-y-12 pb-24">
       
-      {/* Category Filter Bar - Sticky */}
-      <div className="sticky top-16 md:top-20 bg-white/95 backdrop-blur-md z-30 pt-4 pb-2 -mx-4 px-4 sm:px-8 sm:-mx-8 border-b border-gray-100/50 shadow-sm transition-all duration-300">
-        {/* Search Result Banner */}
-        {searchTerm && (
-            <div className="mb-4 flex items-center justify-between bg-black text-white px-6 py-3 rounded-xl shadow-xl animate-in slide-in-from-top-4 duration-500">
-                <span className="font-medium text-sm md:text-base">
-                    نتائج البحث عن: <span className="font-bold underline text-yellow-400">{searchTerm}</span>
-                </span>
-                <button 
-                    onClick={clearSearch} 
-                    className="flex items-center gap-1 hover:bg-white/20 px-2 py-1 rounded transition text-sm"
-                >
-                    <XCircle size={16} />
-                    <span className="hidden sm:inline">إلغاء</span>
-                </button>
-            </div>
-        )}
+      {/* Hero Section */}
+      {!searchTerm && !selectedCategory && (
+        <section className="relative h-[400px] md:h-[500px] -mx-4 sm:-mx-8 overflow-hidden rounded-3xl mb-12">
+          <img 
+            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1920&q=80" 
+            className="w-full h-full object-cover"
+            alt="Hero"
+          />
+          <div className="absolute inset-0 bg-black/30 flex flex-col justify-center items-center text-center p-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+              اكتشف جمال الشمال
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl font-medium">
+              أفضل أماكن الإقامة في الحسيمة ونواحيها، مختارة بعناية لتجربة لا تُنسى.
+            </p>
+          </div>
+        </section>
+      )}
 
-        <div className="flex items-center gap-6 md:gap-8 overflow-x-auto no-scrollbar pb-2">
+      {/* Category Filter Bar */}
+      <div className="sticky top-16 md:top-20 bg-white/95 backdrop-blur-sm z-30 py-4 -mx-4 px-4 sm:px-8 sm:-mx-8 border-b border-gray-100">
+        {/* Search Result Banner */}
+        {(searchTerm || selectedCategory) && (
+          <div className="mb-4 flex items-center justify-between bg-black text-white px-4 py-2 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2">
+              <Tag size={16} className="text-[#FF385C]" />
+              <span className="text-sm font-bold">
+                {searchTerm ? `نتائج البحث عن: "${searchTerm}"` : `تصفية حسب: ${selectedCategory}`}
+              </span>
+            </div>
+            <button 
+              onClick={clearSearch}
+              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <XCircle size={18} />
+            </button>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
             <button
                 onClick={() => setSelectedCategory('')}
-                className={`flex flex-col items-center gap-2 min-w-[64px] cursor-pointer group transition-all duration-300 ${selectedCategory === '' ? 'text-black border-b-2 border-black scale-105' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg p-1 hover:-translate-y-1'}`}
+                className={`flex flex-col items-center gap-2 min-w-[60px] cursor-pointer transition-colors ${selectedCategory === '' ? 'text-black' : 'text-gray-500 hover:text-black'}`}
             >
-                <div className="text-2xl drop-shadow-sm transition-transform group-hover:scale-110">🏠</div>
-                <span className="text-xs font-bold whitespace-nowrap pb-1">الكل</span>
+                <HomeIcon size={24} />
+                <span className="text-xs font-semibold">الكل</span>
+                {selectedCategory === '' && <div className="h-0.5 w-full bg-black mt-1" />}
             </button>
-            {activeCategories.map((cat, idx) => {
+            
+            {activeCategories.map((cat) => {
                 const Icon = IconMap[cat.icon] || HomeIcon;
                 const isSelected = selectedCategory === cat.label;
                 return (
                 <button
                     key={cat.label}
                     onClick={() => setSelectedCategory(cat.label)}
-                    style={{ transitionDelay: `${idx * 50}ms` }}
-                    className={`flex flex-col items-center gap-2 min-w-[64px] cursor-pointer group transition-all duration-300 ${
-                    isSelected 
-                        ? 'text-black opacity-100 border-b-2 border-black scale-105' 
-                        : 'text-gray-500 opacity-70 hover:opacity-100 hover:bg-gray-50 rounded-lg p-1 hover:-translate-y-1'
-                    }`}
+                    className={`flex flex-col items-center gap-2 min-w-[60px] cursor-pointer transition-colors ${isSelected ? 'text-black' : 'text-gray-500 hover:text-black'}`}
                 >
-                    <Icon size={24} strokeWidth={isSelected ? 2.5 : 1.5} className="drop-shadow-sm transition-transform group-hover:scale-110" />
-                    <span className={`text-xs font-medium whitespace-nowrap pb-1 ${isSelected ? 'font-bold' : ''}`}>
-                    {cat.label}
-                    </span>
+                    <Icon size={24} />
+                    <span className="text-xs font-semibold whitespace-nowrap">{cat.label}</span>
+                    {isSelected && <div className="h-0.5 w-full bg-black mt-1" />}
                 </button>
                 );
             })}
         </div>
       </div>
 
-      {/* Main Content: Vertical Sections of Neighborhoods */}
+      {/* Main Content */}
       {sections.length === 0 ? (
-          <div className="text-center py-20 animate-in fade-in zoom-in-95 duration-500">
-            <div className="text-6xl mb-4 grayscale opacity-50">🏠</div>
-            <h2 className="text-xl font-semibold mb-2 text-gray-900">لا توجد نتائج</h2>
-            <p className="text-gray-500 max-w-md mx-auto">
-                {searchTerm 
-                    ? `لا توجد بيوت متاحة في "${searchTerm}" حالياً. حاول البحث في منطقة أخرى.` 
-                    : 'لم نجد أي عقارات متاحة حالياً. تأكد من إضافة عقارات ونشرها من لوحة التحكم.'}
-            </p>
-            {(selectedCategory || searchTerm) && (
-                <button 
-                    onClick={() => {
-                        setSelectedCategory('');
-                        clearSearch();
-                    }}
-                    className="mt-6 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-800 hover:scale-105 transition-all shadow-lg active:scale-95"
-                >
-                    عرض كل العقارات
-                </button>
-            )}
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-2">لا توجد نتائج</h2>
+            <p className="text-gray-500">جرب البحث عن منطقة أخرى أو تصفح جميع العقارات.</p>
+            <button 
+                onClick={clearSearch}
+                className="mt-6 px-6 py-2 bg-black text-white rounded-full font-bold"
+            >
+                عرض الكل
+            </button>
           </div>
       ) : (
-          <div className="space-y-12 pb-8">
-              {sections.map((section, sectionIdx) => (
-                  <div key={section.title} className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${sectionIdx * 0.1}s` }}>
-                      
-                      {/* 1. Section Header: Clearly separates "Mirador" from others */}
-                      <div 
-                        className="flex items-center justify-between px-1 cursor-pointer group"
-                        onClick={() => setActiveNeighborhood(section.title)}
-                      >
-                          <div>
-                            <h2 className="text-lg md:text-2xl font-bold text-gray-900 group-hover:text-[#FF385C] transition-colors flex items-center gap-2">
-                                {section.title}
-                                <ChevronLeft size={18} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-300 text-[#FF385C]" />
-                            </h2>
-                            <p className="text-xs md:text-sm text-gray-500 font-medium">
-                                {section.title === 'أماكن أخرى مميزة' ? 'اكتشف المزيد' : `بيوت في ${section.title.split('(')[0].trim()}`}
-                            </p>
-                          </div>
-                          
-                          {/* "See All" Button */}
-                          <button className="text-xs md:text-sm font-semibold underline decoration-gray-300 hover:text-[#FF385C] transition flex items-center gap-1">
-                              عرض الكل 
-                              <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md text-[10px]">{section.items.length}</span>
+          <div className="space-y-16">
+              {sections.map((section) => (
+                  <div key={section.title} className="space-y-6">
+                      <div className="flex items-center justify-between">
+                          <h2 className="text-2xl font-bold text-gray-900">{section.title}</h2>
+                          <button 
+                            onClick={() => setActiveNeighborhood(section.title)}
+                            className="text-sm font-bold text-gray-600 hover:underline flex items-center gap-1"
+                          >
+                              عرض الكل ({section.items.length})
+                              <ArrowRight size={16} className="rotate-180" />
                           </button>
                       </div>
 
-                      {/* 2. Horizontal List: Reduced Card Width for "Ad near Ad" effect (160px min-width) */}
-                      <div className="flex overflow-x-auto gap-3 pb-4 -mx-4 px-4 sm:px-0 sm:mx-0 no-scrollbar snap-x snap-mandatory scroll-pl-4">
-                          {section.items.map((property, idx) => (
-                              <div 
-                                key={property.id} 
-                                className="min-w-[160px] sm:min-w-[200px] md:min-w-[240px] snap-center"
-                              >
-                                  <PropertyCard property={property} index={idx} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                          {section.items.slice(0, 6).map((property) => (
+                              <div key={property.id} className="w-full">
+                                  <PropertyCard property={property} />
                               </div>
                           ))}
-                          
-                          {/* "See More" Card at the end of the strip */}
-                          <div className="min-w-[100px] sm:min-w-[140px] flex items-center justify-center snap-center">
+                      </div>
+                      {section.items.length > 6 && (
+                          <div className="flex justify-center pt-4">
                               <button 
                                 onClick={() => setActiveNeighborhood(section.title)}
-                                className="group flex flex-col items-center gap-2 p-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#FF385C] hover:bg-rose-50 transition-all duration-300 w-full h-[70%]"
+                                className="px-8 py-3 border-2 border-black rounded-full font-bold hover:bg-black hover:text-white transition-all active:scale-95"
                               >
-                                  <div className="w-10 h-10 rounded-full bg-gray-100 group-hover:bg-white flex items-center justify-center transition-colors shadow-sm group-hover:shadow-md">
-                                      <ArrowRight size={20} className="text-gray-400 group-hover:text-[#FF385C]" />
-                                  </div>
-                                  <span className="font-bold text-gray-400 group-hover:text-[#FF385C] text-center text-xs">المزيد</span>
+                                  عرض المزيد في {section.title}
                               </button>
                           </div>
-                      </div>
+                      )}
                   </div>
               ))}
           </div>
       )}
-
-      {/* Floating Price Notification */}
-      <div className="fixed bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-12 fade-in duration-1000 pointer-events-none delay-1000">
-         <div className="bg-[#222222] text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 pointer-events-auto cursor-pointer hover:scale-105 hover:bg-black transition-all group border border-white/10 backdrop-blur-md">
-             <span className="text-xs md:text-sm font-semibold tracking-wide">الأسعار شاملة جميع الرسوم</span>
-             <Tag size={14} className="fill-white text-white rotate-90 group-hover:rotate-45 transition-transform duration-300" />
-         </div>
-      </div>
-
     </div>
   );
 };

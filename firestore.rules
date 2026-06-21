@@ -1,0 +1,167 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: properties
+    // Document ID: propertyId
+    // Fields:
+    //   - id: string (required)
+    //   - title: string (required, size < 100)
+    //   - description: string (required, size < 2000)
+    //   - location: string (required, size < 200)
+    //   - price: number (optional)
+    //   - images: list (required, size < 20)
+    //   - imageCategories: map (optional)
+    //   - category: string (required)
+    //   - status: string (required, enum: ['published', 'hidden'])
+    //   - rating: number (required)
+    //   - ownerId: string (required)
+    //   - amenities: list (optional, size < 50)
+    //   - maxGuests: number (required)
+    //   - bedrooms: number (required)
+    //   - bathrooms: number (required)
+    //   - livingRooms: number (required)
+    //   - kitchens: number (required)
+    //   - latitude: number (optional)
+    //   - longitude: number (optional)
+    //   - badge: string (optional, enum: ['none', 'crown', 'trophy', 'diamond', 'verified'])
+    //
+    // Collection: bookings
+    // Document ID: bookingId
+    // Fields:
+    //   - id: string (required)
+    //   - propertyId: string (required)
+    //   - propertyTitle: string (required)
+    //   - guestId: string (required)
+    //   - guestName: string (required)
+    //   - guestPhone: string (required)
+    //   - startDate: string (required, ISO 8601)
+    //   - endDate: string (required, ISO 8601)
+    //   - totalPrice: number (required)
+    //   - status: string (required, enum: ['pending', 'confirmed', 'rejected'])
+    //   - createdAt: number (required)
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - role: string (required, enum: ['guest', 'host', 'admin'])
+    //   - avatar: string (optional)
+    //   - email: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "orooro10000@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidProperty(data) {
+      return data.id is string &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.description is string && data.description.size() < 2000 &&
+             data.location is string && data.location.size() < 200 &&
+             data.images is list && data.images.size() <= 20 &&
+             data.category is string &&
+             data.status in ['published', 'hidden'] &&
+             data.rating is number &&
+             data.ownerId is string &&
+             data.maxGuests is number &&
+             data.bedrooms is number &&
+             data.bathrooms is number &&
+             data.livingRooms is number &&
+             data.kitchens is number;
+    }
+
+    function isValidBooking(data) {
+      return data.id is string &&
+             data.propertyId is string &&
+             data.propertyTitle is string &&
+             data.guestId is string &&
+             data.guestName is string &&
+             data.guestPhone is string &&
+             isValidDateString(data.startDate) &&
+             isValidDateString(data.endDate) &&
+             data.totalPrice is number &&
+             data.status in ['pending', 'confirmed', 'rejected'] &&
+             data.createdAt is number;
+    }
+
+    function isValidUser(data) {
+      return data.id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.role in ['guest', 'host', 'admin'] &&
+             isValidEmail(data.email);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /properties/{propertyId} {
+      allow read: if true; // Publicly readable for browsing
+      allow create: if isAuthenticated() && isValidProperty(request.resource.data) && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidProperty(request.resource.data) && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /bookings/{bookingId} {
+      // Guests can read their own bookings, hosts can read bookings for their properties
+      allow read: if isAuthenticated() && (
+        resource.data.guestId == request.auth.uid || 
+        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isValidBooking(request.resource.data) && (request.resource.data.guestId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && isValidBooking(request.resource.data) && (
+        resource.data.guestId == request.auth.uid || 
+        get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.ownerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      // PII Protection: Only owners or admins can read user documents
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin()) && 
+                    (request.resource.data.role == resource.data.role || isAdmin()); // Prevent self-role escalation
+      allow delete: if isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

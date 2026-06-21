@@ -7,13 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+      
+      :root {
+        --brand: #FF385C;
+        --brand-hover: #E31C5F;
+        --ink: #222222;
+        --ink-light: #717171;
+        --surface: #FFFFFF;
+        --surface-alt: #F7F7F7;
+      }
+
       body {
-        font-family: 'Cairo', sans-serif;
+        font-family: 'Inter', 'Cairo', sans-serif;
         scroll-behavior: smooth;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        color: var(--ink);
+        background-color: var(--surface);
       }
+
       /* Custom scrollbar for categories */
       .no-scrollbar::-webkit-scrollbar {
         display: none;
@@ -27,7 +40,7 @@
       @keyframes fadeInUpSpring {
         0% {
           opacity: 0;
-          transform: translateY(40px) scale(0.95);
+          transform: translateY(30px) scale(0.98);
         }
         100% {
           opacity: 1;
@@ -35,9 +48,27 @@
         }
       }
 
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideInRight {
+        from { transform: translateX(20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
       .animate-card-entry {
         animation: fadeInUpSpring 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-        opacity: 0; /* Hidden by default until animation starts */
+        opacity: 0;
+      }
+
+      .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+
+      .animate-slide-in {
+        animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
       /* Smooth transition classes */
@@ -46,23 +77,31 @@
         backface-visibility: hidden;
         perspective: 1000px;
       }
+
+      /* Glassmorphism */
+      .glass {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .glass-dark {
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      /* Custom selection */
+      ::selection {
+        background: var(--brand);
+        color: white;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
-    "leaflet": "https://esm.sh/leaflet@^1.9.4"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="bg-white text-gray-800 antialiased selection:bg-rose-500 selection:text-white">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

@@ -8,6 +8,7 @@ export interface Property {
   images: string[]; 
   imageCategories?: Record<string, string>; // Map Image URL/Base64 -> Category Name (e.g. "Bedroom 1")
   category: string;
+  neighborhood?: string; // Added neighborhood field
   status: 'published' | 'hidden';
   rating: number;
   ownerId: string;
@@ -31,6 +32,7 @@ export interface Booking {
   guestId: string;
   guestName: string;     // Saved for display
   guestPhone: string;    // Added phone number
+  propertyOwnerId: string; // Added to easily query for host dashboard
   startDate: string; 
   endDate: string;   
   totalPrice: number;

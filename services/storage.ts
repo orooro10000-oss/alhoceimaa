@@ -1,158 +1,367 @@
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  setDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  onSnapshot,
+  Timestamp,
+  addDoc
+} from 'firebase/firestore';
+import { db, auth } from '../firebase';
 import { Property, Booking } from '../types';
 
-// تحديث المفتاح إلى الإصدار 7 (v7) لتحديث بيانات HIGH STUDIO
-const STORAGE_KEY = 'airhome_master_data_v7_highstudio'; 
-const BOOKING_KEY = 'airhome_master_bookings_v7_highstudio';
-
-// بيانات العقارات (تم تحديث الصور والعنوان)
-const SEED_DATA: Property[] = [
-  {
-    id: 'prop_matadiro_centre_ville',
-    title: 'HIGH STUDIO',
-    description: 'استمتع بإقامة استثنائية في HIGH STUDIO بقلب وسط المدينة. شقة شاطئية فاخرة بتصنيف ماسي، مجهزة بكل وسائل الراحة من واي فاي وتلفاز وتكييف ومطبخ متكامل. موقع مثالي قريب من البحر والمرافق الحيوية.',
-    location: 'وسط المدينة (Centre Ville)',
-    price: 0,
-    category: 'شاطئية',
-    status: 'published',
-    rating: 5.0,
-    ownerId: 'host_123',
-    amenities: ['واي فاي', 'تلفاز', 'تكييف', 'غسالة', 'مطبخ مجهز', 'ثلاجة', 'قريب من الشاطئ'],
-    maxGuests: 3,
-    bedrooms: 1,
-    bathrooms: 1,
-    livingRooms: 1,
-    kitchens: 1,
-    badge: 'diamond',
-    images: [
-      'https://i.ibb.co/g5wN6cT/IMG-20251031-WA0060.jpg', // Cover - غلاف
-      'https://i.ibb.co/DP0Wfh3L/IMG-20251031-WA0058.jpg', // Living
-      'https://i.ibb.co/zhK5cQ44/IMG-20251031-WA0057.jpg', // Living
-      'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg', // Living
-      'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg', // Bedroom
-      'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg', // Bedroom
-      'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg', // Bedroom
-      'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg', // Kitchen
-      'https://i.ibb.co/YFHssxx5/IMG-20251031-WA0069.jpg', // Bathroom
-      'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg', // Bathroom
-      'https://i.ibb.co/b5bYwTKm/IMG-20251031-WA0055.jpg', // Exterior
-      'https://i.ibb.co/TBNMk9xM/IMG-20251031-WA0056.jpg'  // Exterior
-    ],
-    imageCategories: {
-        'https://i.ibb.co/g5wN6cT/IMG-20251031-WA0060.jpg': 'cover',
-        'https://i.ibb.co/DP0Wfh3L/IMG-20251031-WA0058.jpg': 'living',
-        'https://i.ibb.co/zhK5cQ44/IMG-20251031-WA0057.jpg': 'living',
-        'https://i.ibb.co/ZzmTSVmQ/IMG-20251031-WA0071.jpg': 'living',
-        'https://i.ibb.co/whJTX1WM/IMG-20251031-WA0059-1.jpg': 'bedroom_1',
-        'https://i.ibb.co/67HDSKnZ/IMG-20251031-WA0067-1.jpg': 'bedroom_1',
-        'https://i.ibb.co/yFrXtvcy/IMG-20251031-WA0065-1.jpg': 'bedroom_1',
-        'https://i.ibb.co/4RnRdXB6/IMG-20251031-WA0064.jpg': 'kitchen_1',
-        'https://i.ibb.co/YFHssxx5/IMG-20251031-WA0069.jpg': 'bathroom_1',
-        'https://i.ibb.co/kspWRM6d/IMG-20251031-WA0070.jpg': 'bathroom_1',
-        'https://i.ibb.co/b5bYwTKm/IMG-20251031-WA0055.jpg': 'exterior',
-        'https://i.ibb.co/TBNMk9xM/IMG-20251031-WA0056.jpg': 'exterior'
-    }
-  }
-];
-
-// منطق التحميل:
-if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_DATA));
+// Error Handling Spec for Firestore Operations
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
 }
 
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData.map(provider => ({
+        providerId: provider.providerId,
+        displayName: provider.displayName,
+        email: provider.email,
+        photoUrl: provider.photoURL
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+const PROPERTIES_COLLECTION = 'properties';
+const BOOKINGS_COLLECTION = 'bookings';
+
 export const PropertyService = {
-  getAll: (): Property[] => {
-    if (typeof window === 'undefined') return [];
+  getAll: async (): Promise<Property[]> => {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch (e) {
-        console.error("Error loading properties", e);
-        return [];
+      const querySnapshot = await getDocs(collection(db, PROPERTIES_COLLECTION));
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, PROPERTIES_COLLECTION);
+      return [];
     }
   },
 
-  getPublished: (): Property[] => {
-    const all = PropertyService.getAll();
-    return all.filter(p => p.status === 'published');
-  },
-
-  getById: (id: string): Property | undefined => {
-     const all = PropertyService.getAll();
-     return all.find(p => p.id === id);
-  },
-
-  getByOwner: (ownerId: string): Property[] => {
-    const all = PropertyService.getAll();
-    return all.filter(p => p.ownerId === ownerId);
-  },
-
-  save: (property: Property): void => {
-    const all = PropertyService.getAll();
-    const existingIndex = all.findIndex(p => p.id === property.id);
-    
-    if (existingIndex >= 0) {
-      all[existingIndex] = { ...all[existingIndex], ...property };
-    } else {
-      all.unshift(property); 
+  getPublished: async (): Promise<Property[]> => {
+    try {
+      const q = query(collection(db, PROPERTIES_COLLECTION), where('status', '==', 'published'));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, PROPERTIES_COLLECTION);
+      return [];
     }
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   },
 
-  delete: (id: string): void => {
-    const all = PropertyService.getAll();
-    const filtered = all.filter(p => p.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  getById: async (id: string): Promise<Property | undefined> => {
+    try {
+      const docRef = doc(db, PROPERTIES_COLLECTION, id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Property;
+      }
+      return undefined;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, `${PROPERTIES_COLLECTION}/${id}`);
+      return undefined;
+    }
   },
 
-  exportData: (): string => {
-      const data = PropertyService.getAll();
-      return JSON.stringify(data, null, 2);
+  getByOwner: async (ownerId: string): Promise<Property[]> => {
+    try {
+      const q = query(collection(db, PROPERTIES_COLLECTION), where('ownerId', '==', ownerId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, PROPERTIES_COLLECTION);
+      return [];
+    }
+  },
+
+  save: async (property: Property): Promise<void> => {
+    try {
+      const docRef = doc(db, PROPERTIES_COLLECTION, property.id);
+      await setDoc(docRef, property, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `${PROPERTIES_COLLECTION}/${property.id}`);
+    }
+  },
+
+  delete: async (id: string): Promise<void> => {
+    try {
+      await deleteDoc(doc(db, PROPERTIES_COLLECTION, id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `${PROPERTIES_COLLECTION}/${id}`);
+    }
+  },
+
+  subscribeToPublished: (callback: (properties: Property[]) => void) => {
+    const q = query(collection(db, PROPERTIES_COLLECTION), where('status', '==', 'published'));
+    return onSnapshot(q, (snapshot) => {
+      const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+      callback(properties);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, PROPERTIES_COLLECTION);
+    });
+  },
+
+  subscribeByOwner: (ownerId: string, callback: (properties: Property[]) => void) => {
+    const q = query(collection(db, PROPERTIES_COLLECTION), where('ownerId', '==', ownerId));
+    return onSnapshot(q, (snapshot) => {
+      const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Property));
+      callback(properties);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, PROPERTIES_COLLECTION);
+    });
+  },
+
+  seedInitialData: async (ownerId: string): Promise<void> => {
+    try {
+      const existing = await PropertyService.getById('jazz-property-id');
+      if (!existing) {
+        const seedProperties: Property[] = [
+          {
+            id: 'jazz-property-id',
+            title: 'شقة جاز الفاخرة',
+            description: 'عقار فاخر في قلب المدينة يتميز بتصميم عصري وأجواء مريحة ومطبخ مجهز بالكامل.',
+            location: 'وسط المدينة (Centre Ville)',
+            neighborhood: 'وسط المدينة (Centre Ville)',
+            images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80'],
+            category: 'مدن',
+            status: 'published',
+            rating: 4.9,
+            ownerId: ownerId,
+            amenities: ['مطبخ مجهز', 'تكييف', 'واي فاي', 'موقف سيارات'],
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 2,
+            livingRooms: 1,
+            kitchens: 1,
+            badge: 'verified',
+            price: 450
+          },
+          {
+            id: 'mirador-view-1',
+            title: 'إطلالة ميرادور الساحرة',
+            description: 'شقة واسعة مع شرفة تطل مباشرة على خليج الحسيمة. مثالية للعائلات.',
+            location: 'ميرادور (Mirador)',
+            neighborhood: 'ميرادور (Mirador)',
+            images: ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'],
+            category: 'شاطئية',
+            status: 'published',
+            rating: 4.8,
+            ownerId: ownerId,
+            amenities: ['إطلالة بحر', 'مصعد', 'تكييف'],
+            maxGuests: 6,
+            bedrooms: 3,
+            bathrooms: 2,
+            livingRooms: 1,
+            kitchens: 1,
+            badge: 'crown',
+            price: 600
+          },
+          {
+            id: 'sabadia-beach-1',
+            title: 'جوهرة صبادية',
+            description: 'منزل عصري على بعد خطوات قليلة من شاطئ صبادية الهادئ.',
+            location: 'صبادية (Sabadia)',
+            neighborhood: 'صبادية (Sabadia)',
+            images: ['https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80'],
+            category: 'شاطئية',
+            status: 'published',
+            rating: 4.7,
+            ownerId: ownerId,
+            amenities: ['قريب من الشاطئ', 'واي فاي', 'تلفاز'],
+            maxGuests: 4,
+            bedrooms: 2,
+            bathrooms: 1,
+            livingRooms: 1,
+            kitchens: 1,
+            badge: 'diamond',
+            price: 550
+          },
+          {
+            id: 'quemado-resort-1',
+            title: 'منتجع كيمادو الفاخر',
+            description: 'استمتع بأفضل إطلالة على شاطئ كيمادو الشهير في هذه الشقة الراقية.',
+            location: 'شاطئ كيمادو (Quemado)',
+            neighborhood: 'شاطئ كيمادو (Quemado)',
+            images: ['https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'],
+            category: 'رائج',
+            status: 'published',
+            rating: 5.0,
+            ownerId: ownerId,
+            amenities: ['مسبح', 'إطلالة بحر', 'أمن 24/7'],
+            maxGuests: 5,
+            bedrooms: 2,
+            bathrooms: 2,
+            livingRooms: 1,
+            kitchens: 1,
+            badge: 'trophy',
+            price: 800
+          },
+          {
+            id: 'calabonita-flat-1',
+            title: 'شقة كالا بونيتا الهادئة',
+            description: 'مكان هادئ ومريح بالقرب من منتزه كالا بونيتا الطبيعي.',
+            location: 'كالا بونيتا (Calabonita)',
+            neighborhood: 'كالا بونيتا (Calabonita)',
+            images: ['https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80'],
+            category: 'منازل صغيرة',
+            status: 'published',
+            rating: 4.6,
+            ownerId: ownerId,
+            amenities: ['هدوء', 'موقف سيارات مجاني', 'مطبخ'],
+            maxGuests: 3,
+            bedrooms: 1,
+            bathrooms: 1,
+            livingRooms: 1,
+            kitchens: 1,
+            badge: 'verified',
+            price: 350
+          }
+        ];
+
+        for (const property of seedProperties) {
+          await PropertyService.save(property);
+        }
+        console.log('Initial data seeded successfully.');
+      }
+    } catch (error) {
+      console.error('Error seeding data:', error);
+    }
+  },
+  
+  exportData: async (): Promise<string> => {
+    try {
+      const properties = await PropertyService.getAll();
+      return JSON.stringify(properties, null, 2);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      return '[]';
+    }
   }
 };
 
 export const BookingService = {
-  getAll: (): Booking[] => {
-    if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem(BOOKING_KEY);
-    return data ? JSON.parse(data) : [];
+  getAll: async (): Promise<Booking[]> => {
+    try {
+      const querySnapshot = await getDocs(collection(db, BOOKINGS_COLLECTION));
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
+      return [];
+    }
   },
 
-  getByProperty: (propertyId: string): Booking[] => {
-    return BookingService.getAll().filter(b => b.propertyId === propertyId);
+  getByProperty: async (propertyId: string): Promise<Booking[]> => {
+    try {
+      const q = query(collection(db, BOOKINGS_COLLECTION), where('propertyId', '==', propertyId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
+      return [];
+    }
   },
 
-  isRangeAvailable: (propertyId: string, startDate: string, endDate: string): boolean => {
-    const propertyBookings = BookingService.getByProperty(propertyId)
-        .filter(b => b.status !== 'rejected'); 
-    
-    const newStart = new Date(startDate).getTime();
-    const newEnd = new Date(endDate).getTime();
+  isRangeAvailable: async (propertyId: string, startDate: string, endDate: string): Promise<boolean> => {
+    try {
+      const propertyBookings = await BookingService.getByProperty(propertyId);
+      const filteredBookings = propertyBookings.filter(b => b.status !== 'rejected');
+      
+      const newStart = new Date(startDate).getTime();
+      const newEnd = new Date(endDate).getTime();
 
-    return !propertyBookings.some(booking => {
-        const existingStart = new Date(booking.startDate).getTime();
-        const existingEnd = new Date(booking.endDate).getTime();
-        return (newStart < existingEnd && newEnd > existingStart);
+      return !filteredBookings.some(booking => {
+          const existingStart = new Date(booking.startDate).getTime();
+          const existingEnd = new Date(booking.endDate).getTime();
+          return (newStart < existingEnd && newEnd > existingStart);
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
+      return false;
+    }
+  },
+
+  create: async (booking: Booking): Promise<boolean> => {
+    try {
+      const available = await BookingService.isRangeAvailable(booking.propertyId, booking.startDate, booking.endDate);
+      if (!available) return false;
+
+      const docRef = doc(db, BOOKINGS_COLLECTION, booking.id);
+      await setDoc(docRef, booking);
+      return true;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, BOOKINGS_COLLECTION);
+      return false;
+    }
+  },
+
+  updateStatus: async (bookingId: string, status: 'confirmed' | 'rejected'): Promise<void> => {
+    try {
+      const docRef = doc(db, BOOKINGS_COLLECTION, bookingId);
+      await setDoc(docRef, { status }, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `${BOOKINGS_COLLECTION}/${bookingId}`);
+    }
+  },
+
+  subscribeToUserBookings: (userId: string, callback: (bookings: Booking[]) => void) => {
+    const q = query(collection(db, BOOKINGS_COLLECTION), where('guestId', '==', userId));
+    return onSnapshot(q, (snapshot) => {
+      const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+      callback(bookings);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
     });
   },
 
-  create: (booking: Booking): boolean => {
-    if (!BookingService.isRangeAvailable(booking.propertyId, booking.startDate, booking.endDate)) {
-        return false;
-    }
-
-    const all = BookingService.getAll();
-    all.push(booking);
-    localStorage.setItem(BOOKING_KEY, JSON.stringify(all));
-    return true;
-  },
-
-  updateStatus: (bookingId: string, status: 'confirmed' | 'rejected'): void => {
-    const all = BookingService.getAll();
-    const index = all.findIndex(b => b.id === bookingId);
-    if (index !== -1) {
-        all[index].status = status;
-        localStorage.setItem(BOOKING_KEY, JSON.stringify(all));
-    }
+  subscribeByPropertyOwner: (ownerId: string, callback: (bookings: Booking[]) => void) => {
+    const q = query(collection(db, BOOKINGS_COLLECTION), where('propertyOwnerId', '==', ownerId));
+    return onSnapshot(q, (snapshot) => {
+      const bookings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
+      callback(bookings);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
+    });
   }
 };

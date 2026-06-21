@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "Property": {
+      "title": "Property",
+      "description": "A vacation rental property",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "price": { "type": "number" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "imageCategories": { "type": "object" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["published", "hidden"] },
+        "rating": { "type": "number" },
+        "ownerId": { "type": "string" },
+        "amenities": { "type": "array", "items": { "type": "string" } },
+        "maxGuests": { "type": "number" },
+        "bedrooms": { "type": "number" },
+        "bathrooms": { "type": "number" },
+        "livingRooms": { "type": "number" },
+        "kitchens": { "type": "number" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "badge": { "type": "string", "enum": ["none", "crown", "trophy", "diamond", "verified"] }
+      },
+      "required": ["id", "title", "description", "location", "category", "status", "rating", "ownerId", "maxGuests", "bedrooms", "bathrooms", "livingRooms", "kitchens"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A booking for a property",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "propertyId": { "type": "string" },
+        "propertyTitle": { "type": "string" },
+        "guestId": { "type": "string" },
+        "guestName": { "type": "string" },
+        "guestPhone": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "rejected"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "propertyId", "propertyTitle", "guestId", "guestName", "guestPhone", "startDate", "endDate", "totalPrice", "status", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["guest", "host", "admin"] },
+        "avatar": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["id", "name", "role", "email"]
+    }
+  },
+  "firestore": {
+    "/properties/{propertyId}": {
+      "schema": "Property",
+      "description": "A collection of vacation rental properties"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "A collection of bookings for properties"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "A collection of users"
+    }
+  }
+}

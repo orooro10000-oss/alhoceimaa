@@ -94,7 +94,7 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
       if (!property.badge || property.badge === 'none') return null;
       
       return (
-          <div className="absolute top-3 right-3 z-10 bg-white/95 backdrop-blur-sm p-1.5 rounded-full shadow-md animate-in zoom-in spin-in-12 duration-500">
+          <div className="absolute top-3 right-3 z-10 glass p-2 rounded-2xl shadow-xl animate-in zoom-in spin-in-12 duration-500 border border-white/50">
                {property.badge === 'crown' && <Crown size={18} className="text-yellow-500 fill-yellow-500" />}
                {property.badge === 'trophy' && <Trophy size={18} className="text-yellow-500 fill-yellow-500" />}
                {property.badge === 'diamond' && <Gem size={18} className="text-blue-400 fill-blue-400" />}
@@ -146,6 +146,7 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
                         <img 
                           src={img} 
                           draggable="false"
+                          referrerPolicy="no-referrer"
                           alt={`${property.title} - ${idx + 1}`} 
                           className={`h-full w-full object-cover select-none pointer-events-none transition-transform duration-[3000ms] ease-out ${
                               isHovered && idx === currentImageIndex ? 'scale-110' : 'scale-100'
@@ -211,21 +212,40 @@ const PropertyCard: React.FC<Props> = ({ property, index = 0 }) => {
             </div>
 
             {/* Card Content */}
-            <div className="flex flex-col gap-1 px-1">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-gray-900 text-[15px] leading-tight line-clamp-1 group-hover:text-black transition-colors">{property.title}</h3>
-                <div className="flex items-center gap-1 text-xs font-medium">
-                   <Star size={12} className="fill-black text-black" />
+            <div className="flex flex-col gap-3 px-2 py-4">
+              <div className="flex justify-between items-start gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black text-[#FF385C] uppercase tracking-[0.2em]">PROPERTY / عقار</span>
+                    <div className="w-1 h-1 bg-gray-200 rounded-full" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-lg leading-tight line-clamp-1 group-hover:text-black transition-colors tracking-tighter uppercase">{property.title}</h3>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-black bg-black text-white px-3 py-1.5 rounded-xl shadow-lg border border-white/10">
+                   <Star size={12} className="fill-[#FF385C] text-[#FF385C]" />
                    <span>{property.rating}</span>
                 </div>
               </div>
               
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
+              <div className="flex items-center gap-2 text-gray-400 text-[11px] font-bold uppercase tracking-widest">
+                 <MapPin size={12} className="text-[#FF385C]" />
                  <span className="line-clamp-1">{property.location}</span>
               </div>
               
-              <div className="flex items-center gap-1 text-gray-400 text-xs mt-0.5">
-                  <span>{property.category}</span>
+              <div className="h-[1px] w-full bg-gray-50" />
+
+              <div className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">CATEGORY</span>
+                    <span className="text-[10px] font-black text-gray-900 uppercase tracking-[0.1em]">{property.category}</span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">STARTING FROM</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-black text-gray-400">DH</span>
+                      <span className="text-lg font-black text-black tracking-tighter">{property.price || '---'}</span>
+                    </div>
+                  </div>
               </div>
             </div>
         </div>

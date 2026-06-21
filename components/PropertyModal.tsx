@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Property } from '../types';
 import { CATEGORIES, NEIGHBORHOODS, SUGGESTED_TITLES } from '../constants';
+import { showToast } from '../utils/toast';
 import { generateDescription, classifyImage } from '../services/geminiService';
 import { X, Sparkles, Loader2, Upload, Trash2, Camera, Minus, Plus, BedDouble, Bath, Armchair, Utensils, Users, Image as ImageIcon, Star, FolderOpen, ArrowDown, Wifi, Tv, Car, Wind, Waves, Snowflake, WashingMachine, Coffee, Mountain, MapPin, Crown, Trophy, Gem, ShieldCheck, Ban } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   isOpen: boolean;
@@ -79,6 +81,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }) => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Partial<Property>>({
     title: '',
     location: '',
@@ -89,7 +92,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
     imageCategories: {}, // Initialize empty map
     status: 'published',
     rating: 5.0,
-    ownerId: 'host_123',
+    ownerId: user?.uid || 'host_123',
     maxGuests: 2,
     bedrooms: 1,
     bathrooms: 1,
@@ -107,9 +110,9 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
   // Suggestions State
   const [activeSuggestionField, setActiveSuggestionField] = useState<'title' | 'location' | null>(null);
 
-  const getDraftKey = () => {
+  const getDraftKey = React.useCallback(() => {
     return initialData?.id ? `airhome_draft_edit_${initialData.id}` : 'airhome_draft_new';
-  };
+  }, [initialData?.id]);
 
   useEffect(() => {
     if (isOpen) {
@@ -123,7 +126,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
         imageCategories: {},
         status: 'published',
         rating: 5.0,
-        ownerId: 'host_123',
+        ownerId: user?.uid || 'host_123',
         maxGuests: 2,
         bedrooms: 1,
         bathrooms: 1,
@@ -162,7 +165,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
 
       setFormData(startingData);
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen, getDraftKey, user?.uid]);
 
   // Handle closing suggestions when clicking outside
   useEffect(() => {
@@ -220,7 +223,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
         const classifications = await Promise.all(base64Images.map(img => classifyImage(img)));
         
         setFormData(prev => {
-            let newImages = [...(prev.images || [])];
+            const newImages = [...(prev.images || [])];
             const newCategories = { ...(prev.imageCategories || {}) };
 
             base64Images.forEach((img, idx) => {
@@ -246,7 +249,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
         });
       } catch (err) {
         console.error("Image processing error:", err);
-        alert("حدث خطأ أثناء معالجة الصور.");
+        showToast("حدث خطأ أثناء معالجة الصور.", "error");
       } finally {
         setIsAnalyzing(false);
       }
@@ -278,7 +281,7 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
 
   const handleGenerateDescription = async () => {
     if (!formData.title || !formData.location || !formData.category) {
-      alert("يرجى ملء العنوان والموقع والفئة أولاً.");
+      showToast("يرجى ملء العنوان والموقع والفئة أولاً.", "info");
       return;
     }
     setIsGenerating(true);
@@ -304,8 +307,8 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
     setIsSaving(true);
     
     // Validation
-    if (!formData.title?.trim()) { alert("يرجى كتابة عنوان العقار"); setIsSaving(false); return; }
-    if (!formData.location?.trim()) { alert("يرجى تحديد الموقع"); setIsSaving(false); return; }
+    if (!formData.title?.trim()) { showToast("يرجى كتابة عنوان العقار", "error"); setIsSaving(false); return; }
+    if (!formData.location?.trim()) { showToast("يرجى تحديد الموقع", "error"); setIsSaving(false); return; }
     
     let finalImages = [...(formData.images || [])];
     const categories = formData.imageCategories || {};
@@ -338,9 +341,9 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
     } catch (error: any) {
         console.error("Save Error:", error);
         if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
-            alert("عذراً، مساحة التخزين ممتلئة! الصور تستهلك مساحة كبيرة. يرجى حذف بعض الصور أو العقارات القديمة والمحاولة مرة أخرى.");
+            showToast("عذراً، مساحة التخزين ممتلئة! الصور تستهلك مساحة كبيرة. يرجى حذف بعض الصور أو العقارات القديمة والمحاولة مرة أخرى.", "error");
         } else {
-            alert("حدث خطأ أثناء حفظ العقار. يرجى المحاولة مرة أخرى.");
+            showToast("حدث خطأ أثناء حفظ العقار. يرجى المحاولة مرة أخرى.", "error");
         }
     } finally {
         setIsSaving(false);
@@ -394,318 +397,349 @@ const PropertyModal: React.FC<Props> = ({ isOpen, onClose, onSave, initialData }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-200 border border-gray-100">
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-20">
-          <h2 className="text-xl font-bold">{initialData ? 'تعديل العقار' : 'إضافة عقار جديد'}</h2>
-          <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-full transition"><X size={20} /></button>
+      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300 border border-gray-100 no-scrollbar">
+        <div className="flex items-center justify-between p-8 border-b-2 border-black sticky top-0 bg-white z-20">
+          <div className="flex items-center gap-4">
+             <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center text-white shadow-2xl transform -rotate-3 group-hover:rotate-0 transition-transform">
+                {initialData ? <Pencil size={28} /> : <Plus size={28} />}
+             </div>
+             <div>
+                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">{initialData ? 'Edit Asset' : 'New Asset'}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-black bg-black text-white px-2 py-0.5 rounded uppercase tracking-widest">v2.5</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Host Control Unit</span>
+                </div>
+             </div>
+          </div>
+          <button onClick={handleClose} className="w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-2xl border-2 border-transparent hover:border-black transition-all active:scale-90"><X size={24} className="text-black" /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-8">
+        <form onSubmit={handleSubmit} className="p-0 divide-y-2 divide-black">
           {/* Section 1: Basic Info */}
-          <div className="space-y-4">
-             <h3 className="text-lg font-bold border-b pb-2">معلومات أساسية</h3>
-             
-             {/* Badge Selection */}
-             <div className="space-y-3 pb-4">
-                 <label className="text-sm font-medium text-gray-700 block">شعار مميز للعقار (يظهر في الإعلان)</label>
-                 <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                    {BADGE_OPTIONS.map(opt => (
-                        <button
-                        type="button"
-                        key={opt.id}
-                        onClick={() => setFormData(prev => ({ ...prev, badge: opt.id as any }))}
-                        className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl border-2 transition-all ${
-                            formData.badge === opt.id 
-                            ? 'border-black bg-gray-50 shadow-sm scale-105' 
-                            : 'border-gray-100 hover:border-gray-300 bg-white'
-                        }`}
-                        >
-                        <opt.icon className={opt.color} size={24} />
-                        <span className="text-[10px] mt-2 font-bold text-gray-600">{opt.label}</span>
-                        </button>
-                    ))}
-                 </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+             <div className="lg:col-span-4 p-8 bg-gray-50 border-b-2 lg:border-b-0 lg:border-l-2 border-black">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl font-black text-black opacity-20 font-mono">01</span>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Core Identity</h3>
+                </div>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed italic">Define the primary characteristics and visual markers of your property.</p>
              </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Title Input with Suggestions */}
-                <div className="space-y-2 relative suggestion-container">
-                    <label className="text-sm font-medium text-gray-700">العنوان <span className="text-red-500">*</span></label>
-                    <input 
-                        className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition"
-                        value={formData.title} 
-                        onChange={e => setFormData({ ...formData, title: e.target.value })} 
-                        onFocus={() => setActiveSuggestionField('title')}
-                        placeholder="مثال: فيلا فاخرة على البحر"
-                        autoComplete="off"
-                    />
-                    {activeSuggestionField === 'title' && filteredTitles.length > 0 && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
-                             <div className="bg-gray-50 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider sticky top-0">عناوين مقترحة</div>
-                             {filteredTitles.map((title, idx) => (
-                                 <div 
-                                    key={idx}
-                                    onMouseDown={() => {
-                                        setFormData(prev => ({ ...prev, title }));
-                                        setActiveSuggestionField(null);
-                                    }}
-                                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700 transition-colors"
-                                 >
-                                    <Sparkles size={14} className="text-yellow-500" />
-                                    {title}
-                                 </div>
-                             ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Location Input with Suggestions */}
-                <div className="space-y-2 relative suggestion-container">
-                    <label className="text-sm font-medium text-gray-700">الموقع (الحي) <span className="text-red-500">*</span></label>
-                    <input 
-                        className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition"
-                        value={formData.location} 
-                        onChange={e => setFormData({ ...formData, location: e.target.value })} 
-                        onFocus={() => setActiveSuggestionField('location')}
-                        placeholder="اختر الحي أو المنطقة"
-                        autoComplete="off"
-                    />
-                    {activeSuggestionField === 'location' && filteredNeighborhoods.length > 0 && (
-                        <div className="absolute top-full left-0 w-full bg-white border border-gray-100 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
-                             <div className="bg-gray-50 px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider sticky top-0">الأحياء المتوفرة</div>
-                             {filteredNeighborhoods.map((hood, idx) => (
-                                 <div 
-                                    key={idx}
-                                    onMouseDown={() => {
-                                        setFormData(prev => ({ ...prev, location: hood }));
-                                        setActiveSuggestionField(null);
-                                    }}
-                                    className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700 transition-colors"
-                                 >
-                                    <MapPin size={16} className="text-gray-400" />
-                                    {hood}
-                                 </div>
-                             ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-             <div className="grid grid-cols-2 gap-6">
-                {/* Rating Input */}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">التقييم (0-5)</label>
-                    <div className="relative">
-                        <input type="number" step="0.1" min="0" max="5" className="w-full bg-white border border-gray-300 rounded-lg p-3 pl-10 focus:ring-2 focus:ring-black outline-none transition"
-                            value={formData.rating} onChange={e => setFormData({ ...formData, rating: Number(e.target.value) })} />
-                        <Star size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="#9ca3af" />
+             
+             <div className="lg:col-span-8 p-8 space-y-8 bg-white">
+                {/* Badge Selection */}
+                <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Visual Marker / الشعار</label>
+                    <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {BADGE_OPTIONS.map(opt => (
+                            <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => setFormData(prev => ({ ...prev, badge: opt.id as any }))}
+                            className={`flex flex-col items-center justify-center p-4 min-w-[100px] rounded-2xl border-2 transition-all duration-300 ${
+                                formData.badge === opt.id 
+                                ? 'border-black bg-black text-white shadow-2xl -translate-y-1' 
+                                : 'border-gray-100 hover:border-black bg-white text-gray-400'
+                            }`}
+                            >
+                            <opt.icon className={formData.badge === opt.id ? 'text-white fill-white' : opt.color} size={28} />
+                            <span className="text-[10px] mt-3 font-black uppercase tracking-widest">{opt.label}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">الفئة</label>
-                    <select className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition"
-                        value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                        {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
-                    </select>
-                </div>
-            </div>
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Title Input with Suggestions */}
+                    <div className="space-y-3 relative suggestion-container">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Property Title / العنوان</label>
+                        <input 
+                            className="w-full bg-white border-2 border-gray-100 rounded-2xl p-4 focus:border-black outline-none transition-all font-bold text-lg"
+                            value={formData.title} 
+                            onChange={e => setFormData({ ...formData, title: e.target.value })} 
+                            onFocus={() => setActiveSuggestionField('title')}
+                            placeholder="e.g. LUXURY BEACH VILLA"
+                            autoComplete="off"
+                        />
+                        {activeSuggestionField === 'title' && filteredTitles.length > 0 && (
+                            <div className="absolute top-full left-0 w-full bg-white border-2 border-black rounded-2xl shadow-2xl z-50 mt-2 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                                 {filteredTitles.map((title, idx) => (
+                                     <div 
+                                        key={idx}
+                                        onMouseDown={() => {
+                                            setFormData(prev => ({ ...prev, title }));
+                                            setActiveSuggestionField(null);
+                                        }}
+                                        className="px-6 py-4 hover:bg-black hover:text-white cursor-pointer flex items-center gap-3 text-sm font-bold transition-colors border-b border-gray-100 last:border-0"
+                                     >
+                                        <Sparkles size={16} className="text-yellow-500" />
+                                        {title}
+                                     </div>
+                                 ))}
+                            </div>
+                        )}
+                    </div>
 
-          {/* Section 2: Rooms & Spaces */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold border-b pb-2">توزيع الغرف</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Counter label="الضيوف (العدد الأقصى)" value={formData.maxGuests || 0} field="maxGuests" icon={Users} />
-                <Counter label="غرف النوم" value={formData.bedrooms || 0} field="bedrooms" icon={BedDouble} />
-                <Counter label="غرف الجلوس" value={formData.livingRooms || 0} field="livingRooms" icon={Armchair} />
-                <Counter label="المطابخ" value={formData.kitchens || 0} field="kitchens" icon={Utensils} />
-                <Counter label="دورات المياه" value={formData.bathrooms || 0} field="bathrooms" icon={Bath} />
-            </div>
-          </div>
-          
-          {/* Section 2.5: Amenities (What this place offers) */}
-          <div className="space-y-4">
-             <h3 className="text-lg font-bold border-b pb-2">ما يقدمه هذا المسكن</h3>
-             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                 {AMENITIES_LIST.map((item) => (
-                     <div 
-                        key={item.id}
-                        onClick={() => toggleAmenity(item.label)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition select-none ${
-                            formData.amenities?.includes(item.label) 
-                            ? 'bg-black text-white border-black' 
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                        }`}
-                     >
-                         <item.icon size={20} />
-                         <span className="text-sm font-medium">{item.label}</span>
-                     </div>
-                 ))}
+                    {/* Location Input with Suggestions */}
+                    <div className="space-y-3 relative suggestion-container">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Location / الموقع</label>
+                        <input 
+                            className="w-full bg-white border-2 border-gray-100 rounded-2xl p-4 focus:border-black outline-none transition-all font-bold text-lg"
+                            value={formData.location} 
+                            onChange={e => setFormData({ ...formData, location: e.target.value })} 
+                            onFocus={() => setActiveSuggestionField('location')}
+                            placeholder="SELECT NEIGHBORHOOD"
+                            autoComplete="off"
+                        />
+                        {activeSuggestionField === 'location' && filteredNeighborhoods.length > 0 && (
+                            <div className="absolute top-full left-0 w-full bg-white border-2 border-black rounded-2xl shadow-2xl z-50 mt-2 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
+                                 {filteredNeighborhoods.map((hood, idx) => (
+                                     <div 
+                                        key={idx}
+                                        onMouseDown={() => {
+                                            setFormData(prev => ({ ...prev, location: hood, neighborhood: hood }));
+                                            setActiveSuggestionField(null);
+                                        }}
+                                        className="px-6 py-4 hover:bg-black hover:text-white cursor-pointer flex items-center gap-3 text-sm font-bold transition-colors border-b border-gray-100 last:border-0"
+                                     >
+                                        <MapPin size={18} className="text-gray-400 group-hover:text-white" />
+                                        {hood}
+                                     </div>
+                                 ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Rating / التقييم</label>
+                        <div className="relative">
+                            <input type="number" step="0.1" min="0" max="5" className="w-full bg-white border-2 border-gray-100 rounded-2xl p-4 pl-12 focus:border-black outline-none transition-all font-bold"
+                                value={formData.rating} onChange={e => setFormData({ ...formData, rating: Number(e.target.value) })} />
+                            <Star size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-black fill-black" />
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Category / الفئة</label>
+                        <select className="w-full bg-white border-2 border-gray-100 rounded-2xl p-4 focus:border-black outline-none transition-all font-bold appearance-none"
+                            value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                            {CATEGORIES.map(c => <option key={c.label} value={c.label}>{c.label}</option>)}
+                        </select>
+                    </div>
+                </div>
              </div>
           </div>
 
-          {/* Section 3: Photos Manager */}
-          <div className="space-y-6">
-             <div className="flex justify-between items-center border-b pb-2">
-                <div>
-                    <h3 className="text-lg font-bold">صور العقار</h3>
-                    <p className="text-xs text-gray-500 mt-1">ارفع الصور أولاً ثم قم بتوزيعها على الغرف</p>
+          {/* Section 2: Distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+             <div className="lg:col-span-4 p-8 bg-gray-50 border-b-2 lg:border-b-0 lg:border-l-2 border-black">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl font-black text-black opacity-20 font-mono">02</span>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Distribution</h3>
                 </div>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed italic">Configure the structural layout and capacity of your property.</p>
+             </div>
+             
+             <div className="lg:col-span-8 p-8 space-y-6 bg-white">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Counter label="Max Guests" value={formData.maxGuests || 0} field="maxGuests" icon={Users} />
+                    <Counter label="Bedrooms" value={formData.bedrooms || 0} field="bedrooms" icon={BedDouble} />
+                    <Counter label="Living Rooms" value={formData.livingRooms || 0} field="livingRooms" icon={Armchair} />
+                    <Counter label="Kitchens" value={formData.kitchens || 0} field="kitchens" icon={Utensils} />
+                    <Counter label="Bathrooms" value={formData.bathrooms || 0} field="bathrooms" icon={Bath} />
+                </div>
+             </div>
+          </div>
+
+          {/* Section 3: Amenities */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+             <div className="lg:col-span-4 p-8 bg-gray-50 border-b-2 lg:border-b-0 lg:border-l-2 border-black">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl font-black text-black opacity-20 font-mono">03</span>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Amenities</h3>
+                </div>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed italic">Select the features and services available to your guests.</p>
+             </div>
+             
+             <div className="lg:col-span-8 p-8 bg-white">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {AMENITIES_LIST.map((item) => (
+                        <div 
+                            key={item.id}
+                            onClick={() => toggleAmenity(item.label)}
+                            className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 select-none ${
+                                formData.amenities?.includes(item.label) 
+                                ? 'bg-black text-white border-black shadow-xl -translate-y-1' 
+                                : 'bg-white text-gray-700 border-gray-100 hover:border-black'
+                            }`}
+                        >
+                            <item.icon size={24} />
+                            <span className="text-xs font-black uppercase tracking-widest">{item.label}</span>
+                        </div>
+                    ))}
+                </div>
+             </div>
+          </div>
+
+          {/* Section 4: Visuals */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+             <div className="lg:col-span-4 p-8 bg-gray-50 border-b-2 lg:border-b-0 lg:border-l-2 border-black">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl font-black text-black opacity-20 font-mono">04</span>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Visual Assets</h3>
+                </div>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed italic">Upload and categorize high-resolution imagery of your property.</p>
+                
                 <button
                     type="button"
                     onClick={handleBulkUploadClick}
                     disabled={isAnalyzing}
-                    className="bg-black hover:bg-gray-800 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition shadow-md"
+                    className="mt-8 w-full bg-black text-white p-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-gray-800 transition-all shadow-2xl disabled:opacity-50"
                 >
-                    {isAnalyzing ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                    {isAnalyzing ? 'جارٍ التحليل...' : 'رفع صور جماعي'}
+                    {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Upload size={20} />}
+                    {isAnalyzing ? 'Analyzing...' : 'Bulk Upload'}
                 </button>
              </div>
              
-             <div className="space-y-6">
-                {displaySpaces.map((space) => {
-                    const SpaceIcon = space.icon;
-                    // Filter images belonging to this category
-                    // Also handle legacy images that have no category -> treat as 'other'
-                    const spaceImages = formData.images?.filter(img => {
-                        const cat = formData.imageCategories?.[img];
-                        if (space.id === 'other') {
-                            return cat === 'other' || !cat || !spaces.some(s => s.id === cat);
-                        }
-                        return cat === space.id;
-                    }) || [];
+             <div className="lg:col-span-8 p-8 space-y-8 bg-white">
+                <div className="space-y-8">
+                    {displaySpaces.map((space) => {
+                        const SpaceIcon = space.icon;
+                        const spaceImages = formData.images?.filter(img => {
+                            const cat = formData.imageCategories?.[img];
+                            if (space.id === 'other') {
+                                return cat === 'other' || !cat || !spaces.some(s => s.id === cat);
+                            }
+                            return cat === space.id;
+                        }) || [];
 
-                    // Don't show empty sections except "Other/Unsorted" if it has upload prompt
-                    if (space.id !== 'other' && spaceImages.length === 0) return null;
+                        if (space.id !== 'other' && spaceImages.length === 0) return null;
 
-                    return (
-                        <div key={space.id} className={`rounded-xl border p-4 transition ${space.id === 'other' ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className={`p-2 rounded-full ${space.id === 'cover' ? 'bg-yellow-100 text-yellow-600' : 'bg-white border text-gray-600'}`}>
-                                    <SpaceIcon size={18} />
-                                </div>
-                                <span className="font-bold text-gray-800">{space.label}</span>
-                                <span className="text-xs font-mono bg-white border px-2 py-0.5 rounded text-gray-500">{spaceImages.length}</span>
-                            </div>
-
-                            {space.id === 'other' && spaceImages.length === 0 && (
-                                <div 
-                                    onClick={handleBulkUploadClick}
-                                    className="border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-lg p-8 flex flex-col items-center justify-center text-blue-400 cursor-pointer hover:bg-blue-100/50 transition"
-                                >
-                                    <Camera size={32} className="mb-2 opacity-50" />
-                                    <span className="text-sm font-medium">اضغط لرفع الصور هنا</span>
-                                    <span className="text-xs opacity-70 mt-1">يمكنك رفع صور متعددة دفعة واحدة</span>
-                                </div>
-                            )}
-
-                            {spaceImages.length > 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                    {spaceImages.map((img, idx) => (
-                                        <div key={idx} className="flex flex-col gap-2">
-                                            <div className="relative aspect-square rounded-lg overflow-hidden group border bg-white shadow-sm">
-                                                <img src={img} alt={space.label} className="w-full h-full object-cover" />
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => removeImage(img)}
-                                                    className="absolute top-1 right-1 bg-red-500 text-white p-1.5 rounded-full hover:bg-red-600 transition opacity-0 group-hover:opacity-100"
-                                                    title="حذف"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
-                                                {space.id === 'cover' && idx === 0 && (
-                                                    <div className="absolute bottom-0 w-full bg-yellow-500 text-white text-[10px] py-1 text-center font-bold">
-                                                        الغلاف الرئيسي
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Dropdown to distribute image */}
-                                            <div className="relative">
-                                                <select
-                                                    value={space.id}
-                                                    onChange={(e) => changeImageCategory(img, e.target.value)}
-                                                    className="w-full appearance-none text-xs border border-gray-300 rounded bg-white py-1.5 px-2 pr-6 focus:ring-1 focus:ring-black outline-none cursor-pointer hover:border-gray-400"
-                                                >
-                                                    {spaces.map(s => (
-                                                        <option key={s.id} value={s.id}>{s.label}</option>
-                                                    ))}
-                                                </select>
-                                                <ArrowDown size={10} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                                            </div>
+                        return (
+                            <div key={space.id} className={`rounded-3xl border-2 p-6 transition-all ${space.id === 'other' ? 'bg-gray-50 border-dashed border-gray-300' : 'bg-white border-gray-100'}`}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${space.id === 'cover' ? 'bg-black text-white' : 'bg-white border-2 border-gray-100 text-black'}`}>
+                                            <SpaceIcon size={20} />
                                         </div>
-                                    ))}
+                                        <span className="font-black text-gray-900 uppercase tracking-tight">{space.label}</span>
+                                    </div>
+                                    <span className="text-[10px] font-black bg-gray-100 px-3 py-1 rounded-full text-gray-500 font-mono">{spaceImages.length.toString().padStart(2, '0')}</span>
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
+
+                                {space.id === 'other' && spaceImages.length === 0 && (
+                                    <div 
+                                        onClick={handleBulkUploadClick}
+                                        className="border-2 border-dashed border-gray-200 rounded-2xl p-12 flex flex-col items-center justify-center text-gray-300 cursor-pointer hover:border-black hover:text-black transition-all group"
+                                    >
+                                        <Camera size={48} className="mb-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+                                        <span className="text-xs font-black uppercase tracking-[0.2em]">Drop assets here</span>
+                                    </div>
+                                )}
+
+                                {spaceImages.length > 0 && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        {spaceImages.map((img, idx) => (
+                                            <div key={idx} className="flex flex-col gap-3">
+                                                <div className="relative aspect-square rounded-2xl overflow-hidden group border-2 border-gray-100 bg-white shadow-sm hover:border-black transition-all">
+                                                    <img src={img} referrerPolicy="no-referrer" alt={space.label} className="w-full h-full object-cover" />
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => removeImage(img)}
+                                                        className="absolute top-2 right-2 bg-black text-white p-2 rounded-xl hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100 shadow-xl"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                    {space.id === 'cover' && idx === 0 && (
+                                                        <div className="absolute bottom-0 w-full bg-black text-white text-[8px] py-1.5 text-center font-black uppercase tracking-widest">
+                                                            Master Cover
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                
+                                                <div className="relative">
+                                                    <select
+                                                        value={space.id}
+                                                        onChange={(e) => changeImageCategory(img, e.target.value)}
+                                                        className="w-full appearance-none text-[10px] font-black uppercase tracking-widest border-2 border-gray-100 rounded-xl bg-white py-2 px-3 pr-8 focus:border-black outline-none cursor-pointer hover:bg-gray-50 transition-all"
+                                                    >
+                                                        {spaces.map(s => (
+                                                            <option key={s.id} value={s.id}>{s.label}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ArrowDown size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-black pointer-events-none" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+             </div>
+          </div>
+
+          {/* Section 5: Narrative */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
+             <div className="lg:col-span-4 p-8 bg-gray-50 border-b-2 lg:border-b-0 lg:border-l-2 border-black">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-4xl font-black text-black opacity-20 font-mono">05</span>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Narrative</h3>
+                </div>
+                <p className="text-sm text-gray-500 font-medium leading-relaxed italic">Craft a compelling story about your property to engage potential guests.</p>
+                
+                <button
+                    type="button"
+                    onClick={handleGenerateDescription}
+                    disabled={isGenerating}
+                    className="mt-8 w-full bg-white border-2 border-black text-black p-4 rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-black hover:text-white transition-all shadow-2xl disabled:opacity-50"
+                >
+                    {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                    AI Generate
+                </button>
              </div>
              
-             {/* Hidden File Input */}
-             <input 
-                 ref={fileInputRef}
-                 type="file" 
-                 multiple 
-                 accept="image/*" 
-                 className="hidden" 
-                 onChange={handleFileChange} 
-             />
+             <div className="lg:col-span-8 p-8 bg-white">
+                <textarea
+                    rows={8}
+                    className="w-full bg-white border-2 border-gray-100 rounded-3xl p-6 focus:border-black outline-none transition-all font-medium leading-relaxed resize-none"
+                    value={formData.description}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="صف العقار..."
+                />
+             </div>
           </div>
 
-          {/* Section 4: Description */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-bold border-b pb-2">عن هذا المكان</h3>
-            <div className="flex justify-between items-center mt-2">
-              <label className="text-sm font-medium text-gray-700">وصف العقار <span className="text-red-500">*</span></label>
-              <button
-                type="button"
-                onClick={handleGenerateDescription}
-                disabled={isGenerating}
-                className="text-xs font-semibold text-indigo-600 flex items-center gap-1 hover:text-indigo-800 disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
-                توليد بالذكاء الاصطناعي
-              </button>
+          {/* Footer Actions */}
+          <div className="p-8 bg-gray-50 flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-4 p-4 bg-white rounded-2xl border-2 border-black shadow-xl">
+                <div className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                        type="checkbox" 
+                        id="status"
+                        className="sr-only peer"
+                        checked={formData.status === 'published'}
+                        onChange={e => setFormData({...formData, status: e.target.checked ? 'published' : 'hidden'})}
+                    />
+                    <div className="w-14 h-8 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-black"></div>
+                </div>
+                <label htmlFor="status" className="text-xs font-black text-black uppercase tracking-widest cursor-pointer select-none">
+                    {formData.status === 'published' ? 'منشور' : 'مسودة'}
+                </label>
             </div>
-            <p className="text-xs text-gray-500">يمكنك تعديل النص أدناه بعد التوليد.</p>
-            <textarea
-              rows={4}
-              className="w-full bg-white border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none transition resize-none"
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
-              placeholder="اكتب وصفاً جذاباً للعقار..."
-            />
-          </div>
-          
-           {/* Status Toggle */}
-           <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    id="status"
-                    className="sr-only peer"
-                    checked={formData.status === 'published'}
-                    onChange={e => setFormData({...formData, status: e.target.checked ? 'published' : 'hidden'})}
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-              </div>
-              <label htmlFor="status" className="text-sm font-medium text-gray-700 cursor-pointer select-none">
-                 {formData.status === 'published' ? 'العقار منشور (يظهر للجميع)' : 'العقار مخفي (مسودة)'}
-              </label>
-           </div>
-
-          <div className="pt-4 border-t flex justify-end gap-3">
-            <button type="button" onClick={handleClose} className="px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">إلغاء</button>
-            <button 
-                type="submit" 
-                disabled={isSaving}
-                className="px-6 py-2 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 transition shadow-lg shadow-gray-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isSaving && <Loader2 size={16} className="animate-spin" />}
-              {initialData ? 'حفظ التعديلات' : 'نشر العقار'}
-            </button>
+ 
+            <div className="flex gap-4 w-full sm:w-auto">
+                <button type="button" onClick={handleClose} className="flex-1 sm:flex-none px-8 py-4 rounded-2xl font-black uppercase tracking-widest border-2 border-transparent hover:border-black transition-all">إلغاء</button>
+                <button 
+                    type="submit" 
+                    disabled={isSaving}
+                    className="flex-1 sm:flex-none px-12 py-4 bg-black text-white rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-gray-800 transition-all shadow-2xl disabled:opacity-70 flex items-center justify-center gap-3"
+                >
+                    {isSaving && <Loader2 size={20} className="animate-spin" />}
+                    {initialData ? 'تحديث العقار' : 'إضافة العقار'}
+                </button>
+            </div>
           </div>
         </form>
       </div>

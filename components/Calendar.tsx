@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Booking } from '../types';
 
+import { showToast } from '../utils/toast';
+
 interface CalendarProps {
   bookings: Booking[];
   onChange: (start: string, end: string) => void;
@@ -67,7 +69,7 @@ export const Calendar: React.FC<CalendarProps> = ({ bookings, onChange, selected
         );
 
         if (hasOverlap) {
-          alert('عذراً، الفترة المختارة تتضمن أياماً محجوزة مسبقاً.');
+          showToast('عذراً، الفترة المختارة تتضمن أياماً محجوزة مسبقاً.', 'error');
           onChange(dateStr, ''); // Reset to this date as start
         } else {
           onChange(selectedStart, dateStr);

@@ -5,6 +5,9 @@ import { Property, Booking } from '../types';
 import { Calendar } from '../components/Calendar';
 import { Star, MapPin, Share, Heart, ChevronLeft, ChevronRight, ArrowRight, X, BedDouble, Bath, Armchair, Utensils, AlertCircle, CheckCircle2, Phone, MessageCircle, ArrowDown, Wifi, Tv, Car, Wind, Waves, Coffee, Mountain, CalendarDays, Users } from 'lucide-react';
 import { HOST_PHONE_NUMBER } from '../constants';
+import { useAuth } from '../context/AuthContext';
+import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../firebase';
 
 // --- Improved Booking Form Component ---
 interface BookingFormProps {
@@ -92,7 +95,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <input
                         type="text"
                         id="guestName"
-                        className="block px-4 pb-2.5 pt-5 w-full text-sm text-gray-900 bg-gray-50 rounded-xl border border-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-black focus:bg-white focus:border-transparent peer transition-all"
+                        className="block px-4 pb-2.5 pt-6 w-full text-sm text-gray-900 bg-gray-50/50 rounded-2xl border border-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-black focus:bg-white focus:border-transparent peer transition-all shadow-sm"
                         placeholder=" "
                         value={guestName}
                         onChange={(e) => onNameChange(e.target.value)}
@@ -101,7 +104,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     />
                     <label 
                         htmlFor="guestName"
-                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[100%] right-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:origin-[100%] bg-transparent pointer-events-none"
+                        className="absolute text-xs font-bold text-gray-400 duration-300 transform -translate-y-4 scale-75 top-5 z-10 origin-[100%] right-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:origin-[100%] bg-transparent pointer-events-none uppercase tracking-wider"
                     >
                         الاسم الكامل
                     </label>
@@ -111,7 +114,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     <input
                         type="tel"
                         id="guestPhone"
-                        className="block px-4 pb-2.5 pt-5 w-full text-sm text-gray-900 bg-gray-50 rounded-xl border border-gray-200 appearance-none focus:outline-none focus:ring-2 focus:ring-black focus:bg-white focus:border-transparent peer transition-all"
+                        className="block px-4 pb-2.5 pt-6 w-full text-sm text-gray-900 bg-gray-50/50 rounded-2xl border border-gray-100 appearance-none focus:outline-none focus:ring-2 focus:ring-black focus:bg-white focus:border-transparent peer transition-all shadow-sm"
                         placeholder=" "
                         value={guestPhone}
                         onChange={(e) => onPhoneChange(e.target.value)}
@@ -120,7 +123,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
                     />
                     <label 
                         htmlFor="guestPhone"
-                        className="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[100%] right-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:origin-[100%] bg-transparent pointer-events-none"
+                        className="absolute text-xs font-bold text-gray-400 duration-300 transform -translate-y-4 scale-75 top-5 z-10 origin-[100%] right-4 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:origin-[100%] bg-transparent pointer-events-none uppercase tracking-wider"
                     >
                         رقم الهاتف
                     </label>
@@ -145,6 +148,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
 // --- Main Component ---
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [property, setProperty] = useState<Property | undefined>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -174,13 +178,36 @@ const PropertyDetails: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      const data = PropertyService.getById(id);
-      setProperty(data);
+      PropertyService.getById(id).then(data => {
+        setProperty(data);
+      });
       // Load existing bookings for availability check
-      const bookings = BookingService.getByProperty(id);
-      setExistingBookings(bookings);
+      BookingService.getByProperty(id).then(bookings => {
+        setExistingBookings(bookings);
+      });
     }
   }, [id]);
+
+  useEffect(() => {
+    if (user) {
+      setGuestName(user.displayName || '');
+    }
+  }, [user]);
+
+  // --- Image Slider Logic ---
+  const images = property?.images && property.images.length > 0 
+    ? property.images 
+    : ['https://picsum.photos/800/600'];
+
+  const nextImage = React.useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentImageIndex(prev => (prev < images.length - 1 ? prev + 1 : 0));
+  }, [images.length]);
+
+  const prevImage = React.useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : images.length - 1));
+  }, [images.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -191,7 +218,7 @@ const PropertyDetails: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isLightboxOpen, property, currentImageIndex]);
+  }, [isLightboxOpen, nextImage, prevImage]);
 
   // Close calendar if clicked outside
   useEffect(() => {
@@ -228,7 +255,7 @@ const PropertyDetails: React.FC = () => {
     }
   };
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     // Validate Dates
     if (!startDate || !endDate) {
         setBookingStatus('error');
@@ -249,6 +276,12 @@ const PropertyDetails: React.FC = () => {
         return;
     }
 
+    if (!user) {
+        setBookingStatus('error');
+        setErrorMessage('يرجى تسجيل الدخول أولاً لإتمام الحجز');
+        return;
+    }
+
     if (!property) return;
 
     // Check validity
@@ -259,7 +292,7 @@ const PropertyDetails: React.FC = () => {
     }
 
     // Check Availability using Service
-    const isAvailable = BookingService.isRangeAvailable(property.id, startDate, endDate);
+    const isAvailable = await BookingService.isRangeAvailable(property.id, startDate, endDate);
 
     if (!isAvailable) {
         setBookingStatus('error');
@@ -272,7 +305,8 @@ const PropertyDetails: React.FC = () => {
         id: Date.now().toString(),
         propertyId: property.id,
         propertyTitle: property.title,
-        guestId: 'guest_user',
+        propertyOwnerId: property.ownerId, // Added for host dashboard
+        guestId: user?.uid || 'guest_user',
         guestName: guestName, 
         guestPhone: guestPhone,
         startDate,
@@ -282,11 +316,12 @@ const PropertyDetails: React.FC = () => {
         createdAt: Date.now()
     };
 
-    const success = BookingService.create(newBooking);
+    const success = await BookingService.create(newBooking);
     
     if (success) {
         setBookingStatus('success');
-        setExistingBookings(BookingService.getByProperty(property.id));
+        const updatedBookings = await BookingService.getByProperty(property.id);
+        setExistingBookings(updatedBookings);
         
         // Prepare WhatsApp Message
         let message = `
@@ -333,11 +368,6 @@ const PropertyDetails: React.FC = () => {
       window.location.href = `tel:${HOST_PHONE_NUMBER}`;
   };
 
-  // --- Image Slider Logic ---
-  const images = property?.images && property.images.length > 0 
-    ? property.images 
-    : ['https://picsum.photos/800/600'];
-
   const getCategoryLabel = (imgUrl: string) => {
     if (!property?.imageCategories) return '';
     const catCode = property.imageCategories[imgUrl];
@@ -358,24 +388,6 @@ const PropertyDetails: React.FC = () => {
         return `الحمام ${num}`;
     }
     return '';
-  };
-
-  const nextImage = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (currentImageIndex < images.length - 1) {
-        setCurrentImageIndex(prev => prev + 1);
-    } else {
-        setCurrentImageIndex(0); 
-    }
-  };
-
-  const prevImage = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    if (currentImageIndex > 0) {
-        setCurrentImageIndex(prev => prev - 1);
-    } else {
-        setCurrentImageIndex(images.length - 1); 
-    }
   };
 
   const openLightbox = (index: number) => {
@@ -525,6 +537,7 @@ const PropertyDetails: React.FC = () => {
                     <img 
                     src={img} 
                     draggable="false"
+                    referrerPolicy="no-referrer"
                     alt={`View ${idx}`} 
                     className="w-full h-full object-cover pointer-events-none"
                     />
@@ -561,7 +574,7 @@ const PropertyDetails: React.FC = () => {
       {/* --- Desktop Grid --- */}
       <div className="hidden md:grid grid-cols-4 grid-rows-2 gap-2 h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-8 relative shadow-sm">
         <div className="col-span-2 row-span-2 h-full cursor-pointer relative group" onClick={() => openLightbox(0)}>
-           <img src={images[0]} className="w-full h-full object-cover hover:opacity-95 transition duration-500" alt="Main" />
+           <img src={images[0]} referrerPolicy="no-referrer" className="w-full h-full object-cover hover:opacity-95 transition duration-500" alt="Main" />
            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition duration-300"></div>
         </div>
         {images.slice(1, 5).map((img, idx) => (
@@ -570,7 +583,7 @@ const PropertyDetails: React.FC = () => {
                 className={`h-full cursor-pointer relative group ${idx === 1 ? 'rounded-tr-2xl' : ''} ${idx === 3 ? 'rounded-br-2xl' : ''}`} 
                 onClick={() => openLightbox(idx + 1)}
             >
-                <img src={img || images[0]} className="w-full h-full object-cover hover:opacity-95 transition duration-500" alt={`Sub ${idx}`} />
+                <img src={img || images[0]} referrerPolicy="no-referrer" className="w-full h-full object-cover hover:opacity-95 transition duration-500" alt={`Sub ${idx}`} />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition duration-300"></div>
             </div>
         ))}
@@ -606,6 +619,7 @@ const PropertyDetails: React.FC = () => {
                  >
                      <img 
                          src={images[currentImageIndex]} 
+                         referrerPolicy="no-referrer"
                          className="max-w-full max-h-[75vh] md:max-h-[85vh] object-contain shadow-2xl mx-auto pointer-events-none select-none"
                          alt={`Gallery ${currentImageIndex}`}
                      />
@@ -784,6 +798,32 @@ const PropertyDetails: React.FC = () => {
                         className="mt-4 text-sm font-bold underline hover:text-green-900"
                       >
                         حجز جديد
+                      </button>
+                  </div>
+              ) : !user ? (
+                  <div className="mb-4 p-6 bg-gray-50 rounded-xl border border-gray-200 text-center animate-in fade-in">
+                      <div className="flex justify-center mb-3">
+                          <div className="bg-white p-3 rounded-full border border-gray-100 shadow-sm">
+                              <Users size={32} className="text-gray-400" />
+                          </div>
+                      </div>
+                      <h3 className="font-bold text-lg mb-2">سجل دخولك للحجز</h3>
+                      <p className="text-sm text-gray-500 mb-4 leading-relaxed">يرجى تسجيل الدخول باستخدام حساب جوجل لتتمكن من إرسال طلبات الحجز والتواصل مع المضيف.</p>
+                      <button 
+                          onClick={async () => {
+                              try {
+                                  const provider = new GoogleAuthProvider();
+                                  await signInWithPopup(auth, provider);
+                                  showToast('تم تسجيل الدخول بنجاح', 'success');
+                              } catch (error) {
+                                  console.error("Login Error:", error);
+                                  showToast('فشل تسجيل الدخول', 'error');
+                              }
+                          }}
+                          className="w-full bg-black text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                      >
+                          <Users size={20} />
+                          <span>تسجيل الدخول بجوجل</span>
                       </button>
                   </div>
               ) : (
